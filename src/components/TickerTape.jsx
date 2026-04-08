@@ -1,27 +1,6 @@
+import { useState, useEffect, useRef } from 'react';
 import MarqueeModule from 'react-fast-marquee';
 const Marquee = MarqueeModule.default || MarqueeModule;
-
-const TICKER_SYMBOLS = [
-  // US
-  { sym: '^GSPC', label: 'S&P 500' },
-  { sym: '^IXIC', label: 'Nasdaq' },
-  { sym: '^DJI', label: 'Dow' },
-  { sym: '^RUT', label: 'Russell' },
-  // EU / UK
-  { sym: '^FTSE', label: 'FTSE' },
-  { sym: '^GDAXI', label: 'DAX' },
-  { sym: '^FCHI', label: 'CAC 40' },
-  { sym: '^STOXX50E', label: 'Stoxx 50' },
-  // Asia
-  { sym: '^N225', label: 'Nikkei' },
-  { sym: '^HSI', label: 'Hang Seng' },
-  // Commodities + Vol
-  { sym: 'CL=F', label: 'WTI Crude' },
-  { sym: '^VIX', label: 'VIX' },
-  // M&A Arb ETFs
-  { sym: 'MNA', label: 'MNA' },
-  { sym: 'MRGR', label: 'MRGR' },
-];
 
 function fmt(v) {
   if (v == null) return '--';
@@ -39,32 +18,62 @@ function colorClass(v) {
   return v > 0 ? 'text-pos' : 'text-neg';
 }
 
-export default function TickerTape({ quotes, loading }) {
+export default function TickerTape() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    async function fetchTrending() {
+      try {
+        const res = await fetch('/api/trending');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!mountedRef.current) return;
+
+        const tickers = (data.symbols || []).map(sym => {
+          const q = data.quotes?.[sym];
+          return q ? { sym, name: q.name, price: q.price, changePct: q.changePct } : null;
+        }).filter(Boolean);
+
+        setItems(tickers);
+      } catch {
+        // silent
+      } finally {
+        if (mountedRef.current) setLoading(false);
+      }
+    }
+
+    fetchTrending();
+    const id = setInterval(fetchTrending, 60000);
+    return () => {
+      mountedRef.current = false;
+      clearInterval(id);
+    };
+  }, []);
+
   return (
     <div className="bg-navy-panel border-b border-[#2a3560] py-1.5">
-      {loading && Object.keys(quotes).length === 0 ? (
-        <div className="text-txt-secondary text-[12px] px-5">Loading market data...</div>
+      {loading && items.length === 0 ? (
+        <div className="text-txt-secondary text-[12px] px-5">Loading trending stocks...</div>
+      ) : items.length === 0 ? (
+        <div className="text-txt-secondary text-[12px] px-5">No trending data</div>
       ) : (
         <Marquee speed={40} pauseOnHover gradient={false}>
-          {TICKER_SYMBOLS.map((item) => {
-            const q = quotes[item.sym];
-            return (
-              <div
-                key={item.sym}
-                className="inline-flex items-center gap-1.5 px-4 border-r border-[#3a4570] text-[12px]"
-              >
-                <span className="text-white font-semibold">{item.label}</span>
-                {q ? (
-                  <>
-                    <span className="text-white">{fmt(q.price)}</span>
-                    <span className={colorClass(q.changePct)}>{fmtChg(q.changePct)}</span>
-                  </>
-                ) : (
-                  <span className="text-white/40">--</span>
-                )}
-              </div>
-            );
-          })}
+          <span className="text-[9px] text-gold/50 font-bold tracking-wider px-4">MOST ACTIVE</span>
+          {items.map((item) => (
+            <div
+              key={item.sym}
+              className="inline-flex items-center gap-1.5 px-4 border-r border-[#3a4570] text-[12px]"
+            >
+              <span className="text-white font-semibold">{item.sym}</span>
+              <span className="text-white/50 text-[10px] max-w-[100px] truncate">{item.name}</span>
+              <span className="text-white">{fmt(item.price)}</span>
+              <span className={colorClass(item.changePct)}>{fmtChg(item.changePct)}</span>
+            </div>
+          ))}
         </Marquee>
       )}
     </div>

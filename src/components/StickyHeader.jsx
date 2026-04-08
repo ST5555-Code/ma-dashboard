@@ -9,7 +9,7 @@ export default function StickyHeader({ quotes, loading, onRefresh }) {
       <NavBar />
       <TitleBar onRefresh={onRefresh} />
       <MarketsBar quotes={quotes} loading={loading} />
-      <TickerTape quotes={quotes} loading={loading} />
+      <TickerTape />
     </header>
   );
 }
