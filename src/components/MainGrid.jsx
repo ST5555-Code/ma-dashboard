@@ -1,5 +1,6 @@
 import PanelCard from './PanelCard';
 import LiveTVPanel from './LiveTVPanel';
+import FinancingConditionsPanel from './FinancingConditionsPanel';
 
 function Placeholder({ label }) {
   return (
@@ -7,14 +8,18 @@ function Placeholder({ label }) {
   );
 }
 
-export default function MainGrid() {
+export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading, fredLastUpdated }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
       {/* Left Column */}
       <div className="flex flex-col gap-4 order-3 md:order-1 xl:order-1">
-        <PanelCard title="Financing Conditions" className="min-h-[320px]">
-          <Placeholder label="SOFR, yields, spreads, HYG/LQD" />
-        </PanelCard>
+        <FinancingConditionsPanel
+          fredData={fredData}
+          fredLoading={fredLoading}
+          fredLastUpdated={fredLastUpdated}
+          quotes={quotes}
+          quotesLoading={quotesLoading}
+        />
         <PanelCard title="IPO Tracker" className="min-h-[280px]">
           <Placeholder label="424B4 priced + S-1 filed" />
         </PanelCard>
