@@ -27,8 +27,18 @@ class ErrorBoundary extends Component {
 }
 
 const ALL_SYMBOLS = [
-  '^VIX', '^TNX', '^IRX', '^GSPC',
-  '^IXIC', '^RUT', 'MNA', 'MRGR',
+  // US
+  '^GSPC', '^IXIC', '^DJI', '^RUT',
+  // EU / UK
+  '^FTSE', '^GDAXI', '^FCHI', '^STOXX50E',
+  // Asia
+  '^N225', '^HSI',
+  // Commodities
+  'CL=F',
+  // Rates & Vol (for Financing Conditions + top row charts)
+  '^VIX', '^TNX', '^IRX',
+  // Arb ETFs (for ticker tape)
+  'MNA', 'MRGR',
 ];
 
 const FRED_SERIES = ['SOFR', 'BAMLH0A0HYM2', 'BAMLC0A0CM', 'DGS1', 'DGS2', 'DGS5', 'DGS10', 'DGS30'];
@@ -47,7 +57,7 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-navy text-txt-primary font-sans">
-        <StickyHeader quotes={quotes} loading={quotesLoading} fredData={fredData} onRefresh={handleRefreshAll} />
+        <StickyHeader quotes={quotes} loading={quotesLoading} onRefresh={handleRefreshAll} />
         <TopRow fredData={fredData} fredLoading={fredLoading} fredLastUpdated={fredLastUpdated} refreshFRED={refreshFRED} />
         <MainGrid
           quotes={quotes}

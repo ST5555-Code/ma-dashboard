@@ -1,19 +1,26 @@
 import MarqueeModule from 'react-fast-marquee';
 const Marquee = MarqueeModule.default || MarqueeModule;
 
-const YF_SYMBOLS = [
+const TICKER_SYMBOLS = [
+  // US
   { sym: '^GSPC', label: 'S&P 500' },
   { sym: '^IXIC', label: 'Nasdaq' },
-  { sym: '^RUT', label: 'Russell 2000' },
+  { sym: '^DJI', label: 'Dow' },
+  { sym: '^RUT', label: 'Russell' },
+  // EU / UK
+  { sym: '^FTSE', label: 'FTSE' },
+  { sym: '^GDAXI', label: 'DAX' },
+  { sym: '^FCHI', label: 'CAC 40' },
+  { sym: '^STOXX50E', label: 'Stoxx 50' },
+  // Asia
+  { sym: '^N225', label: 'Nikkei' },
+  { sym: '^HSI', label: 'Hang Seng' },
+  // Commodities + Vol
+  { sym: 'CL=F', label: 'WTI Crude' },
   { sym: '^VIX', label: 'VIX' },
-  { sym: '^TNX', label: '10Y UST' },
+  // M&A Arb ETFs
   { sym: 'MNA', label: 'MNA' },
   { sym: 'MRGR', label: 'MRGR' },
-];
-
-const FRED_SPREADS = [
-  { series: 'BAMLH0A0HYM2', label: 'HY Spread' },
-  { series: 'BAMLC0A0CM', label: 'IG Spread' },
 ];
 
 function fmt(v) {
@@ -32,30 +39,14 @@ function colorClass(v) {
   return v > 0 ? 'text-pos' : 'text-neg';
 }
 
-function oasColorClass(change) {
-  if (change == null || change === 0) return 'text-txt-secondary';
-  return change < 0 ? 'text-pos' : 'text-neg';
-}
-
-function getFredSpread(fredData, seriesId) {
-  const obs = fredData?.[seriesId]?.observations;
-  if (!obs?.length) return null;
-  const latest = obs[0];
-  const prev = obs.length >= 2 ? obs[1] : null;
-  const bps = Math.round(latest.value * 100);
-  const prevBps = prev ? Math.round(prev.value * 100) : null;
-  const change = prevBps != null ? bps - prevBps : null;
-  return { bps, change };
-}
-
-export default function TickerTape({ quotes, loading, fredData }) {
+export default function TickerTape({ quotes, loading }) {
   return (
     <div className="bg-navy-panel border-b border-[#2a3560] py-1.5">
       {loading && Object.keys(quotes).length === 0 ? (
         <div className="text-txt-secondary text-[12px] px-5">Loading market data...</div>
       ) : (
         <Marquee speed={40} pauseOnHover gradient={false}>
-          {YF_SYMBOLS.map((item) => {
+          {TICKER_SYMBOLS.map((item) => {
             const q = quotes[item.sym];
             return (
               <div
@@ -67,30 +58,6 @@ export default function TickerTape({ quotes, loading, fredData }) {
                   <>
                     <span className="text-white">{fmt(q.price)}</span>
                     <span className={colorClass(q.changePct)}>{fmtChg(q.changePct)}</span>
-                  </>
-                ) : (
-                  <span className="text-white/40">--</span>
-                )}
-              </div>
-            );
-          })}
-
-          {FRED_SPREADS.map((item) => {
-            const spread = getFredSpread(fredData, item.series);
-            return (
-              <div
-                key={item.series}
-                className="inline-flex items-center gap-1.5 px-4 border-r border-[#3a4570] text-[12px]"
-              >
-                <span className="text-white font-semibold">{item.label}</span>
-                {spread ? (
-                  <>
-                    <span className="text-white">{spread.bps} bps</span>
-                    {spread.change != null && (
-                      <span className={oasColorClass(spread.change)}>
-                        {spread.change >= 0 ? '+' : ''}{spread.change}
-                      </span>
-                    )}
                   </>
                 ) : (
                   <span className="text-white/40">--</span>

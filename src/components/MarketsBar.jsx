@@ -1,13 +1,20 @@
-const YF_ITEMS = [
-  { sym: '^VIX', label: 'VIX' },
-  { sym: '^TNX', label: '10Y UST' },
-  { sym: '^IRX', label: '2Y UST' },
+const MARKET_ITEMS = [
+  // US
   { sym: '^GSPC', label: 'S&P 500' },
-];
-
-const FRED_ITEMS = [
-  { series: 'BAMLH0A0HYM2', label: 'HY Spread' },
-  { series: 'BAMLC0A0CM', label: 'IG Spread' },
+  { sym: '^IXIC', label: 'Nasdaq' },
+  { sym: '^DJI', label: 'Dow' },
+  { sym: '^RUT', label: 'Russell' },
+  // EU / UK
+  { sym: '^FTSE', label: 'FTSE' },
+  { sym: '^GDAXI', label: 'DAX' },
+  { sym: '^FCHI', label: 'CAC 40' },
+  { sym: '^STOXX50E', label: 'Stoxx 50' },
+  // Asia
+  { sym: '^N225', label: 'Nikkei' },
+  { sym: '^HSI', label: 'Hang Seng' },
+  // Commodities + Vol
+  { sym: 'CL=F', label: 'WTI' },
+  { sym: '^VIX', label: 'VIX' },
 ];
 
 function fmt(v, dec = 2) {
@@ -26,31 +33,14 @@ function colorClass(v) {
   return v > 0 ? 'text-pos' : 'text-neg';
 }
 
-// For OAS: wider = bad (red), tighter = good (green) — inverted
-function oasColorClass(change) {
-  if (change == null || change === 0) return 'text-txt-secondary';
-  return change < 0 ? 'text-pos' : 'text-neg';
-}
-
-function getFredSpread(fredData, seriesId) {
-  const obs = fredData?.[seriesId]?.observations;
-  if (!obs?.length) return null;
-  const latest = obs[0];
-  const prev = obs.length >= 2 ? obs[1] : null;
-  const bps = Math.round(latest.value * 100);
-  const prevBps = prev ? Math.round(prev.value * 100) : null;
-  const change = prevBps != null ? bps - prevBps : null;
-  return { bps, change };
-}
-
-export default function MarketsBar({ quotes, loading, fredData }) {
+export default function MarketsBar({ quotes, loading }) {
   return (
     <div className="bg-[#8B1A1A] px-5 py-1.5 flex items-center gap-4 overflow-x-auto">
       <div className="bg-white text-[#8B1A1A] text-[10px] font-bold px-1.5 py-0.5 tracking-wider flex-shrink-0">
         MARKETS
       </div>
       <div className="flex items-center gap-0 overflow-x-auto">
-        {YF_ITEMS.map((item, i) => {
+        {MARKET_ITEMS.map((item, i) => {
           const q = quotes[item.sym];
           return (
             <div
@@ -73,33 +63,6 @@ export default function MarketsBar({ quotes, loading, fredData }) {
                 </>
               ) : (
                 <span className="text-white/40">N/A</span>
-              )}
-            </div>
-          );
-        })}
-
-        {/* FRED OAS spreads */}
-        {FRED_ITEMS.map((item) => {
-          const spread = getFredSpread(fredData, item.series);
-          return (
-            <div
-              key={item.series}
-              className="inline-flex items-baseline gap-1.5 pr-4 pl-4 border-l border-white/25 whitespace-nowrap text-[12px]"
-            >
-              <span className="text-white/65 text-[10px] font-semibold tracking-wide uppercase">
-                {item.label}
-              </span>
-              {spread ? (
-                <>
-                  <span className="text-white font-semibold">{spread.bps} bps</span>
-                  {spread.change != null && (
-                    <span className={`text-[11px] ${oasColorClass(spread.change)}`}>
-                      {spread.change >= 0 ? '+' : ''}{spread.change}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-white/40">--</span>
               )}
             </div>
           );
