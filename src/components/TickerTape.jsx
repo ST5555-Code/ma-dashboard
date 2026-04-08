@@ -55,9 +55,9 @@ export default function TickerTape() {
   }, []);
 
   return (
-    <div className="bg-navy-panel border-b border-[#2a3560] flex items-center">
+    <div className="bg-navy-panel border-b border-gold/30 flex items-center">
       {/* Fixed label */}
-      <div className="bg-gold/80 text-navy text-[10px] font-bold px-2.5 py-2 tracking-wider flex-shrink-0 z-10">
+      <div className="bg-gold text-navy text-[10px] font-bold py-2 tracking-wider flex-shrink-0 z-10 w-[70px] text-center">
         ACTIVE
       </div>
       {/* Scrolling tape */}
