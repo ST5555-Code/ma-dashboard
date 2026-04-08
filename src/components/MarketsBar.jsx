@@ -35,8 +35,8 @@ function colorClass(v) {
 
 export default function MarketsBar({ quotes, loading }) {
   return (
-    <div className="bg-[#8B1A1A] px-5 py-1.5 flex items-center gap-4 overflow-x-auto">
-      <div className="bg-white text-[#8B1A1A] text-[10px] font-bold px-1.5 py-0.5 tracking-wider flex-shrink-0">
+    <div className="bg-navy px-5 py-1.5 flex items-center gap-4 overflow-x-auto border-b border-gold/30">
+      <div className="bg-gold text-navy text-[10px] font-bold px-1.5 py-0.5 tracking-wider flex-shrink-0">
         MARKETS
       </div>
       <div className="flex items-center gap-0 overflow-x-auto">
