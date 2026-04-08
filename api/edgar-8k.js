@@ -22,27 +22,29 @@ async function parseOfferSize(cik, accession, filename) {
     });
     if (!r.ok) return null;
 
-    // Read first 15KB — cover page has the offering terms
+    // Read first 25KB — cover page has the offering terms
     const reader = r.body.getReader();
     let text = '';
-    while (text.length < 15000) {
+    while (text.length < 25000) {
       const { done, value } = await reader.read();
       if (done) break;
       text += new TextDecoder().decode(value);
     }
     reader.cancel();
 
-    // Strip HTML tags
+    // Strip HTML tags, collapse whitespace
     text = text.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&#\d+;/g, ' ').replace(/\s+/g, ' ');
 
-    // Look for "public offering price" near "$X.XX per share"
-    const priceMatch = text.match(/public\s+offering\s+price[\s\S]{0,200}?\$([0-9,.]+)\s+per\s+share/i)
-      || text.match(/\$([0-9,.]+)\s+per\s+share[\s\S]{0,100}?public\s+offering\s+price/i)
-      || text.match(/offering\s+price\s+of\s+\$([0-9,.]+)/i);
+    // Look for offer price — multiple patterns, wider gaps for table-based layouts
+    const priceMatch = text.match(/offering\s+price\s+of\s+\$([0-9,.]+)/i)
+      || text.match(/price\s+of\s+\$([0-9,.]+)\s+per\s+share/i)
+      || text.match(/public\s+offering\s+price[\s\S]{0,500}?\$([0-9,.]+)\s+per\s+share/i)
+      || text.match(/\$([0-9,.]+)\s+per\s+share[\s\S]{0,200}?public\s+offering\s+price/i)
+      || text.match(/price\s+to\s+public[\s\S]{0,200}?\$([0-9,.]+)/i)
+      || text.match(/at\s+a\s+price\s+of\s+\$([0-9,.]+)/i);
 
-    // Look for total shares offered
-    const sharesMatch = text.match(/([0-9,]+(?:,\d{3})+)\s+shares/i)
-      || text.match(/([0-9,]+)\s+shares\s+of\s+(?:class\s+a\s+)?common/i);
+    // Look for total shares offered — first large number followed by "shares"
+    const sharesMatch = text.match(/([0-9,]+(?:,\d{3})+)\s+(?:shares|Shares)/);
 
     if (!priceMatch || !sharesMatch) return null;
 
