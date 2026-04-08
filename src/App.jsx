@@ -27,11 +27,11 @@ class ErrorBoundary extends Component {
 }
 
 const ALL_SYMBOLS = [
-  '^VIX', '^TNX', '^IRX', 'HYG', 'LQD', '^GSPC',
+  '^VIX', '^TNX', '^IRX', '^GSPC',
   '^IXIC', '^RUT', 'MNA', 'MRGR',
 ];
 
-const FRED_SERIES = ['SOFR', 'BAMLH0A0HYM2', 'DGS10', 'DGS2'];
+const FRED_SERIES = ['SOFR', 'BAMLH0A0HYM2', 'BAMLC0A0CM', 'DGS10', 'DGS2'];
 
 function App() {
   const symbols = useMemo(() => ALL_SYMBOLS, []);
@@ -47,7 +47,7 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-navy text-txt-primary font-sans">
-        <StickyHeader quotes={quotes} loading={quotesLoading} onRefresh={handleRefreshAll} />
+        <StickyHeader quotes={quotes} loading={quotesLoading} fredData={fredData} onRefresh={handleRefreshAll} />
         <TopRow fredData={fredData} fredLoading={fredLoading} fredLastUpdated={fredLastUpdated} />
         <MainGrid
           quotes={quotes}
