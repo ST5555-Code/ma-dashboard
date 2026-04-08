@@ -1,4 +1,5 @@
 import PanelCard from './PanelCard';
+import LiveTVPanel from './LiveTVPanel';
 
 function Placeholder({ label }) {
   return (
@@ -31,9 +32,7 @@ export default function MainGrid() {
 
       {/* Right Column */}
       <div className="flex flex-col gap-4 order-2 md:order-3 xl:order-3">
-        <PanelCard title="Live TV" className="min-h-[280px]">
-          <Placeholder label="Bloomberg / CNBC / Fox Business" />
-        </PanelCard>
+        <LiveTVPanel />
         <PanelCard title="Sponsor / LBO Monitor" className="min-h-[320px]">
           <Placeholder label="Take-private, LBO, sponsor exit" />
         </PanelCard>
