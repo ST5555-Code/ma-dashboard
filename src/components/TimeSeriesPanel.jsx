@@ -122,14 +122,32 @@ function ChartPanel({ title, data, loading, lastUpdated, color, referenceLine, r
     return [Math.floor((min - pad) * 100) / 100, Math.ceil((max + pad) * 100) / 100];
   }, [chartData]);
 
+  const rangeSelector = (
+    <div className="flex gap-1">
+      {RANGES.map((r, i) => (
+        <button
+          key={r.label}
+          onClick={() => setRangeIdx(i)}
+          className={`flex-1 text-[8px] font-semibold py-0.5 rounded-sm cursor-pointer transition-all ${
+            i === rangeIdx
+              ? 'bg-gold/20 text-gold'
+              : 'text-txt-secondary hover:text-white'
+          }`}
+        >
+          {r.label}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <PanelCard title={title} loading={loading} lastUpdated={lastUpdated}>
+    <PanelCard title={title} loading={loading} lastUpdated={lastUpdated} compact footer={rangeSelector}>
       {chartData.length === 0 ? (
         <p className="text-txt-secondary text-[10px] py-6 text-center">No chart data</p>
       ) : (
         <>
           {stats && (
-            <div className="flex items-baseline justify-between mb-1.5">
+            <div className="flex items-baseline justify-between mb-1">
               <div className="flex items-baseline gap-2">
                 <span className="text-[18px] font-bold tabular-nums" style={{ color }}>
                   {stats.current.toFixed(2)}
@@ -148,8 +166,8 @@ function ChartPanel({ title, data, loading, lastUpdated, color, referenceLine, r
             </div>
           )}
 
-          <ResponsiveContainer width="100%" height={130}>
-            <LineChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -10 }}>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 2, left: -12 }}>
               <XAxis
                 dataKey="date"
                 tick={{ fontSize: 9, fill: '#A0AEC0' }}
@@ -162,7 +180,7 @@ function ChartPanel({ title, data, loading, lastUpdated, color, referenceLine, r
                 tick={{ fontSize: 9, fill: '#A0AEC0' }}
                 tickLine={false}
                 axisLine={false}
-                width={40}
+                width={38}
               />
               <Tooltip content={<CustomTooltip />} />
               {referenceLine != null && (
@@ -178,23 +196,6 @@ function ChartPanel({ title, data, loading, lastUpdated, color, referenceLine, r
               />
             </LineChart>
           </ResponsiveContainer>
-
-          {/* Range selector */}
-          <div className="flex gap-1 mt-1.5">
-            {RANGES.map((r, i) => (
-              <button
-                key={r.label}
-                onClick={() => setRangeIdx(i)}
-                className={`flex-1 text-[8px] font-semibold py-0.5 rounded-sm cursor-pointer transition-all ${
-                  i === rangeIdx
-                    ? 'bg-gold/20 text-gold'
-                    : 'text-txt-secondary hover:text-white'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
         </>
       )}
     </PanelCard>

@@ -6,11 +6,11 @@ function timeAgo(date) {
   return `${Math.floor(s / 3600)}h ago`;
 }
 
-export default function PanelCard({ title, lastUpdated, loading, error, children, className = '' }) {
+export default function PanelCard({ title, lastUpdated, loading, error, children, footer, compact, className = '' }) {
   return (
     <div className={`bg-navy-panel rounded-lg border border-gold/15 flex flex-col overflow-hidden ${className}`}>
       {/* Title bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gold/10">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-gold/10">
         <h2 className="text-[11px] font-bold tracking-[1.5px] text-gold uppercase">
           {title}
         </h2>
@@ -27,7 +27,7 @@ export default function PanelCard({ title, lastUpdated, loading, error, children
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
+      <div className={`flex-1 overflow-y-auto min-h-0 ${compact ? 'px-3 py-1.5' : 'px-4 py-3'}`}>
         {error ? (
           <div className="text-neg text-xs py-4 text-center">
             {error}
@@ -36,6 +36,13 @@ export default function PanelCard({ title, lastUpdated, loading, error, children
           children
         )}
       </div>
+
+      {/* Optional footer — flush to bottom */}
+      {footer && (
+        <div className="px-3 py-1.5 border-t border-gold/10">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }
