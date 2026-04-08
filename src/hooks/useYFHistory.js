@@ -42,10 +42,10 @@ export default function useYFHistory(symbol, range = 'ytd', interval = '1d', int
   useEffect(() => {
     mountedRef.current = true;
     fetchData();
-    const id = setInterval(fetchData, intervalMs);
+    const id = intervalMs > 0 ? setInterval(fetchData, intervalMs) : null;
     return () => {
       mountedRef.current = false;
-      clearInterval(id);
+      if (id) clearInterval(id);
     };
   }, [fetchData, intervalMs]);
 

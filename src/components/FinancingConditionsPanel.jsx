@@ -92,15 +92,16 @@ export default function FinancingConditionsPanel({ fredData, fredLoading, fredLa
   return (
     <PanelCard title="Financing Conditions" loading={loading} lastUpdated={fredLastUpdated}>
       <div className="flex flex-col">
-        {/* VIX at top, separated */}
-        <ClickableRow
-          label="VIX"
-          value={metrics.vix}
-          unit=""
-          signalKey="VIX"
-          onClick={() => setChartMetric({ key: 'VIX', title: 'VIX' })}
-        />
-        <div className="border-b border-gold/15 my-1" />
+        {/* VIX at top — not clickable, chart already in top row */}
+        <div className="flex items-center justify-between py-1.5 border-b border-white/5">
+          <span className="text-txt-secondary text-[11px]">VIX</span>
+          <div className="flex items-center gap-2">
+            <span className={`text-[13px] font-semibold tabular-nums ${signalColor[signal('VIX', metrics.vix)]}`}>
+              {metrics.vix != null ? metrics.vix.toFixed(2) : '--'}
+            </span>
+            <span className={`w-1.5 h-1.5 rounded-full ${dotColor[signal('VIX', metrics.vix)]}`} />
+          </div>
+        </div>
 
         {/* Rates */}
         <ClickableRow

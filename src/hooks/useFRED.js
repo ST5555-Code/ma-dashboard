@@ -24,10 +24,10 @@ export default function useFRED(seriesIds, intervalMs = 3600000) {
   useEffect(() => {
     mountedRef.current = true;
     fetchData();
-    const id = setInterval(fetchData, intervalMs);
+    const id = intervalMs > 0 ? setInterval(fetchData, intervalMs) : null;
     return () => {
       mountedRef.current = false;
-      clearInterval(id);
+      if (id) clearInterval(id);
     };
   }, [fetchData, intervalMs]);
 
