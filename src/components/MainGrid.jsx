@@ -24,8 +24,8 @@ export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading,
 
         {/* Middle Column */}
         <div className="flex flex-col gap-4">
-          <DealFlowPanel />
           <MANewsFeedPanel />
+          <DealFlowPanel />
         </div>
 
         {/* Right Column */}

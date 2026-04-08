@@ -3,17 +3,15 @@ import DealEnvironmentPanel from './DealEnvironmentPanel';
 import TimeSeriesPanel from './TimeSeriesPanel';
 import useYFHistory from '../hooks/useYFHistory';
 
-export default function BelowFold({ quotes, quotesLoading, quotesLastUpdated, fredData, fredLoading, fredLastUpdated }) {
-  const { data: vixHistory, loading: vixLoading, lastUpdated: vixUpdated } = useYFHistory('^VIX', 3600000);
+export default function MarketConditionsRow({ quotes, quotesLoading, quotesLastUpdated, fredData, fredLoading, fredLastUpdated }) {
+  const { data: vixHistory, loading: vixLoading, lastUpdated: vixUpdated } = useYFHistory('^VIX', 'ytd', '1d', 3600000);
 
-  // HY OAS from FRED observations (already fetched, last 60 observations)
   const hyOasData = useMemo(() => {
     const obs = fredData?.BAMLH0A0HYM2?.observations;
     if (!obs?.length) return [];
     return [...obs].reverse();
   }, [fredData]);
 
-  // 10Y-2Y spread computed from FRED DGS10 and DGS2
   const spreadData = useMemo(() => {
     const dgs10 = fredData?.DGS10?.observations;
     const dgs2 = fredData?.DGS2?.observations;
@@ -32,9 +30,11 @@ export default function BelowFold({ quotes, quotesLoading, quotesLastUpdated, fr
   }, [fredData]);
 
   return (
-    <div className="px-4 pb-4 flex flex-col gap-4">
+    <div className="px-4 pt-4 flex flex-col gap-4">
+      {/* Deal Environment — full width */}
       <DealEnvironmentPanel quotes={quotes} loading={quotesLoading} lastUpdated={quotesLastUpdated} />
 
+      {/* YTD Charts */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <TimeSeriesPanel
           title="VIX"

@@ -1,7 +1,7 @@
 import { useMemo, Component } from 'react';
 import StickyHeader from './components/StickyHeader';
+import MarketConditionsRow from './components/MarketConditionsRow';
 import MainGrid from './components/MainGrid';
-import BelowFold from './components/BelowFold';
 import useQuotes from './hooks/useQuotes';
 import useFRED from './hooks/useFRED';
 
@@ -48,17 +48,17 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-navy text-txt-primary font-sans">
         <StickyHeader quotes={quotes} loading={quotesLoading} onRefresh={handleRefreshAll} />
-        <MainGrid
+        <MarketConditionsRow
           quotes={quotes}
           quotesLoading={quotesLoading}
+          quotesLastUpdated={quotesLastUpdated}
           fredData={fredData}
           fredLoading={fredLoading}
           fredLastUpdated={fredLastUpdated}
         />
-        <BelowFold
+        <MainGrid
           quotes={quotes}
           quotesLoading={quotesLoading}
-          quotesLastUpdated={quotesLastUpdated}
           fredData={fredData}
           fredLoading={fredLoading}
           fredLastUpdated={fredLastUpdated}

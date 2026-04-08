@@ -15,7 +15,7 @@ function parseHistory(raw) {
   }
 }
 
-export default function useYFHistory(symbol, intervalMs = 3600000) {
+export default function useYFHistory(symbol, range = 'ytd', interval = '1d', intervalMs = 3600000) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -23,7 +23,7 @@ export default function useYFHistory(symbol, intervalMs = 3600000) {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/quotes?syms=${symbol}`);
+      const res = await fetch(`/api/quotes?syms=${symbol}&range=${range}&interval=${interval}`);
       if (!res.ok) return;
       const json = await res.json();
       if (!mountedRef.current) return;
@@ -37,7 +37,7 @@ export default function useYFHistory(symbol, intervalMs = 3600000) {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [symbol]);
+  }, [symbol, range, interval]);
 
   useEffect(() => {
     mountedRef.current = true;

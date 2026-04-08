@@ -4,8 +4,8 @@
 
 const FRED_BASE = 'https://api.stlouisfed.org/fred/series/observations';
 
-async function fetchSeries(seriesId, apiKey) {
-  const url = `${FRED_BASE}?series_id=${seriesId}&api_key=${apiKey}&file_type=json&sort_order=desc&limit=60`;
+async function fetchSeries(seriesId, apiKey, startDate) {
+  const url = `${FRED_BASE}?series_id=${seriesId}&api_key=${apiKey}&file_type=json&sort_order=desc&limit=500&observation_start=${startDate}`;
   const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
   if (!r.ok) throw new Error(`FRED_${r.status}`);
   const data = await r.json();
@@ -31,8 +31,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid series ID' });
   }
 
+  // YTD: start from Jan 1 of current year
+  const startDate = req.query?.start || `${new Date().getFullYear()}-01-01`;
+
   try {
-    const results = await Promise.all(seriesIds.map(id => fetchSeries(id, apiKey)));
+    const results = await Promise.all(seriesIds.map(id => fetchSeries(id, apiKey, startDate)));
     const out = {};
     for (const r of results) out[r.seriesId] = r;
     res.setHeader('Cache-Control', 'public, max-age=3600');
