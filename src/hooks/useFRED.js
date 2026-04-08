@@ -5,10 +5,11 @@ export default function useFRED(seriesIds, intervalMs = 3600000) {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const mountedRef = useRef(true);
+  const seriesKey = seriesIds.join(',');
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/fred?series=${seriesIds.join(',')}`);
+      const res = await fetch(`/api/fred?series=${seriesKey}`);
       if (!res.ok) return;
       const json = await res.json();
       if (!mountedRef.current) return;
@@ -19,7 +20,7 @@ export default function useFRED(seriesIds, intervalMs = 3600000) {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [seriesIds]);
+  }, [seriesKey]);
 
   useEffect(() => {
     mountedRef.current = true;

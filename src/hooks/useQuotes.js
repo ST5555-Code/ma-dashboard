@@ -27,16 +27,17 @@ export default function useQuotes(symbols, intervalMs = 60000) {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const mountedRef = useRef(true);
+  const symbolsKey = symbols.join(',');
 
   const fetchQuotes = useCallback(async () => {
     try {
-      const res = await fetch(`/api/quotes?syms=${symbols.join(',')}`);
+      const res = await fetch(`/api/quotes?syms=${symbolsKey}`);
       if (!res.ok) return;
       const data = await res.json();
       if (!mountedRef.current) return;
 
       const parsed = {};
-      for (const sym of symbols) {
+      for (const sym of symbolsKey.split(',')) {
         const q = parseYFResponse(sym, data[sym]);
         if (q) parsed[sym] = q;
       }
@@ -47,7 +48,7 @@ export default function useQuotes(symbols, intervalMs = 60000) {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [symbols]);
+  }, [symbolsKey]);
 
   useEffect(() => {
     mountedRef.current = true;
