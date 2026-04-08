@@ -1,0 +1,31 @@
+{
+  "rewrites": [
+    { "source": "/ma/(.*)", "destination": "/ma/index.html" }
+  ],
+  "functions": {
+    "api/edgar-8k.js": { "memory": 256, "maxDuration": 30 },
+    "api/fred.js": { "memory": 128, "maxDuration": 15 }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/api/quotes.js",
+      "headers": [{ "key": "Cache-Control", "value": "s-maxage=90" }]
+    },
+    {
+      "source": "/api/rss.js",
+      "headers": [{ "key": "Cache-Control", "value": "s-maxage=300" }]
+    },
+    {
+      "source": "/api/fred.js",
+      "headers": [{ "key": "Cache-Control", "value": "s-maxage=3600" }]
+    }
+  ]
+}
