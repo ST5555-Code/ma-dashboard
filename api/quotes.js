@@ -27,12 +27,24 @@ async function fetchViaAllOrigins(sym, range, interval) {
 }
 
 async function fetchOne(sym, range, interval) {
-  try {
-    return { sym, data: await fetchViaCF(sym, range, interval) };
-  } catch {
+  // If range is beyond what CF proxy supports (it only does 5d), skip to AllOrigins
+  const needsLongRange = range && range !== '5d' && range !== '1d';
+
+  if (!needsLongRange) {
     try {
-      return { sym, data: await fetchViaAllOrigins(sym, range, interval) };
-    } catch (e) {
+      return { sym, data: await fetchViaCF(sym, range, interval) };
+    } catch {
+      // fall through to AllOrigins
+    }
+  }
+
+  try {
+    return { sym, data: await fetchViaAllOrigins(sym, range, interval) };
+  } catch (e) {
+    // Last resort: try CF anyway
+    try {
+      return { sym, data: await fetchViaCF(sym, range, interval) };
+    } catch (e2) {
       return { sym, error: e.message };
     }
   }
