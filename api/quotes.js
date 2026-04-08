@@ -1,18 +1,25 @@
 // /api/quotes.js — Batch Yahoo Finance proxy
 // Accepts: /api/quotes?syms=^VIX,^TNX,HYG&range=ytd&interval=1d
-// Primary: Cloudflare Worker. Fallback: AllOrigins relay.
+// For short range: CF Worker (fast). For long range: direct YF fetch (server-side).
 
 const ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const CF_PROXY = 'https://yf-proxy.mktdash.workers.dev';
 
-async function fetchViaCF(sym, range, interval) {
-  const params = new URLSearchParams({ sym });
-  if (range) params.set('range', range);
-  if (interval) params.set('interval', interval);
-  const r = await fetch(`${CF_PROXY}/?${params}`, {
+async function fetchViaCF(sym) {
+  const r = await fetch(`${CF_PROXY}/?sym=${encodeURIComponent(sym)}`, {
     signal: AbortSignal.timeout(10000),
   });
   if (!r.ok) throw new Error(`CF_${r.status}`);
+  return r.json();
+}
+
+async function fetchDirect(sym, range, interval) {
+  const yfUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=${range || '5d'}&interval=${interval || '1d'}`;
+  const r = await fetch(yfUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MADashboard/1.0)' },
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!r.ok) throw new Error(`YF_DIRECT_${r.status}`);
   return r.json();
 }
 
@@ -27,25 +34,33 @@ async function fetchViaAllOrigins(sym, range, interval) {
 }
 
 async function fetchOne(sym, range, interval) {
-  // If range is beyond what CF proxy supports (it only does 5d), skip to AllOrigins
   const needsLongRange = range && range !== '5d' && range !== '1d';
 
-  if (!needsLongRange) {
+  if (needsLongRange) {
+    // Long range: direct server-side fetch first, then AllOrigins fallback
     try {
-      return { sym, data: await fetchViaCF(sym, range, interval) };
+      return { sym, data: await fetchDirect(sym, range, interval) };
     } catch {
-      // fall through to AllOrigins
+      try {
+        return { sym, data: await fetchViaAllOrigins(sym, range, interval) };
+      } catch (e) {
+        return { sym, error: e.message };
+      }
     }
   }
 
+  // Short range: CF Worker first, then direct, then AllOrigins
   try {
-    return { sym, data: await fetchViaAllOrigins(sym, range, interval) };
-  } catch (e) {
-    // Last resort: try CF anyway
+    return { sym, data: await fetchViaCF(sym) };
+  } catch {
     try {
-      return { sym, data: await fetchViaCF(sym, range, interval) };
-    } catch (e2) {
-      return { sym, error: e.message };
+      return { sym, data: await fetchDirect(sym, range, interval) };
+    } catch {
+      try {
+        return { sym, data: await fetchViaAllOrigins(sym, range, interval) };
+      } catch (e) {
+        return { sym, error: e.message };
+      }
     }
   }
 }
