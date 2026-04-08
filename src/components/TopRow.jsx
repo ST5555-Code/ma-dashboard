@@ -18,6 +18,7 @@ export default function TopRow({ fredData, fredLoading, fredLastUpdated }) {
         data={hyOasData}
         loading={fredLoading}
         lastUpdated={fredLastUpdated}
+        bps
       />
       <YieldCurvePanel />
       <LiveTVPanel />

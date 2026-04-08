@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceDot } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
 import PanelCard from './PanelCard';
 import useFRED from '../hooks/useFRED';
 
@@ -24,11 +24,11 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
-function DotLabel({ cx, cy, payload }) {
-  if (!payload?.yield) return null;
+function renderLabel({ x, y, value }) {
+  if (value == null) return null;
   return (
-    <text x={cx} y={cy - 10} textAnchor="middle" fill="#FFFFFF" fontSize={10} fontWeight={600}>
-      {payload.yield.toFixed(2)}
+    <text x={x} y={y - 10} textAnchor="middle" fill="#FFFFFF" fontSize={10} fontWeight={600}>
+      {value.toFixed(2)}%
     </text>
   );
 }
@@ -150,8 +150,9 @@ export default function YieldCurvePanel() {
                 stroke="#DCB96E"
                 strokeWidth={2}
                 dot={{ r: 4, fill: '#DCB96E', stroke: '#1E2846', strokeWidth: 2 }}
-                label={<DotLabel />}
-              />
+              >
+                <LabelList dataKey="yield" content={renderLabel} />
+              </Line>
             </LineChart>
           </ResponsiveContainer>
         </>
