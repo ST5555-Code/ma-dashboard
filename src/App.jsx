@@ -38,7 +38,7 @@ function App() {
   const fredSeries = useMemo(() => FRED_SERIES, []);
 
   const { quotes, loading: quotesLoading, refresh: refreshQuotes } = useQuotes(symbols, 60000);
-  const { data: fredData, loading: fredLoading, lastUpdated: fredLastUpdated, refresh: refreshFRED } = useFRED(fredSeries, 3600000);
+  const { data: fredData, loading: fredLoading, lastUpdated: fredLastUpdated, refresh: refreshFRED } = useFRED(fredSeries, 1800000);
 
   async function handleRefreshAll() {
     await Promise.all([refreshQuotes(), refreshFRED()]);
@@ -48,7 +48,7 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-navy text-txt-primary font-sans">
         <StickyHeader quotes={quotes} loading={quotesLoading} fredData={fredData} onRefresh={handleRefreshAll} />
-        <TopRow fredData={fredData} fredLoading={fredLoading} fredLastUpdated={fredLastUpdated} />
+        <TopRow fredData={fredData} fredLoading={fredLoading} fredLastUpdated={fredLastUpdated} refreshFRED={refreshFRED} />
         <MainGrid
           quotes={quotes}
           quotesLoading={quotesLoading}

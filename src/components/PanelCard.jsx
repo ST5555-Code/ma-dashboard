@@ -6,7 +6,7 @@ function timeAgo(date) {
   return `${Math.floor(s / 3600)}h ago`;
 }
 
-export default function PanelCard({ title, lastUpdated, loading, error, children, footer, compact, className = '' }) {
+export default function PanelCard({ title, lastUpdated, loading, error, children, footer, compact, onRefresh, className = '' }) {
   return (
     <div className={`bg-navy-panel rounded-lg border border-gold/15 flex flex-col overflow-hidden ${className}`}>
       {/* Title bar */}
@@ -22,6 +22,15 @@ export default function PanelCard({ title, lastUpdated, loading, error, children
             <span className="text-[9px] text-txt-secondary">
               {timeAgo(lastUpdated)}
             </span>
+          )}
+          {onRefresh && (
+            <button
+              onClick={(e) => { e.preventDefault(); onRefresh(); }}
+              className="text-[10px] text-txt-secondary hover:text-gold transition-colors cursor-pointer leading-none"
+              title="Refresh"
+            >
+              ↻
+            </button>
           )}
         </div>
       </div>

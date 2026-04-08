@@ -35,7 +35,7 @@ function renderLabel({ x, y, value }) {
 
 export default function YieldCurvePanel() {
   const fredSeries = useMemo(() => SERIES_IDS, []);
-  const { data: fredData, loading, lastUpdated } = useFRED(fredSeries, 3600000);
+  const { data: fredData, loading, lastUpdated, refresh } = useFRED(fredSeries, 1800000);
 
   // Build today's curve + yesterday's curve
   const { todayCurve, yesterdayCurve, curveStatus } = useMemo(() => {
@@ -87,7 +87,7 @@ export default function YieldCurvePanel() {
   const hasData = todayCurve.some(d => d.yield != null);
 
   return (
-    <PanelCard title="Yield Curve" loading={loading} lastUpdated={lastUpdated}>
+    <PanelCard title="Yield Curve" loading={loading} lastUpdated={lastUpdated} onRefresh={refresh}>
       {!hasData ? (
         <p className="text-txt-secondary text-[10px] py-6 text-center">No curve data</p>
       ) : (

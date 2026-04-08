@@ -3,7 +3,7 @@ import { YFTimeSeriesPanel, FREDTimeSeriesPanel } from './TimeSeriesPanel';
 import YieldCurvePanel from './YieldCurvePanel';
 import LiveTVPanel from './LiveTVPanel';
 
-export default function TopRow({ fredData, fredLoading, fredLastUpdated }) {
+export default function TopRow({ fredData, fredLoading, fredLastUpdated, refreshFRED }) {
   const hyOasData = useMemo(() => {
     const obs = fredData?.BAMLH0A0HYM2?.observations;
     if (!obs?.length) return [];
@@ -19,6 +19,7 @@ export default function TopRow({ fredData, fredLoading, fredLastUpdated }) {
         loading={fredLoading}
         lastUpdated={fredLastUpdated}
         bps
+        onRefresh={refreshFRED}
       />
       <YieldCurvePanel />
       <LiveTVPanel />

@@ -1,17 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PanelCard from './PanelCard';
-import useEDGAR from '../hooks/useEDGAR';
 
-// Tag logic: keyword matching on headline/description
 function deriveTag(text) {
   const t = text.toLowerCase();
   if (t.includes('take-private') || t.includes('take private') || t.includes('going private'))
     return 'Take-Private';
-  if (t.includes('tender offer') || t.includes('schedule to'))
-    return 'TO Filed';
+  if (t.includes('tender offer'))
+    return 'Tender Offer';
   if (t.includes('debt commitment') || t.includes('financing commitment') || t.includes('committed financing'))
     return 'Debt Commitments';
-  if (t.includes('sponsor exit') || t.includes('ipo') || t.includes('secondary offering'))
+  if (t.includes('sponsor exit') || t.includes('secondary offering'))
     return 'Sponsor Exit';
   if (t.includes('sale process') || t.includes('portfolio company') || t.includes('exit'))
     return 'Sale Process';
@@ -22,7 +20,7 @@ function deriveTag(text) {
 
 const TAG_COLORS = {
   'Take-Private': 'bg-gold/15 text-gold border-gold/30',
-  'TO Filed': 'bg-neg/15 text-neg border-neg/30',
+  'Tender Offer': 'bg-neg/15 text-neg border-neg/30',
   'Debt Commitments': 'bg-pos/15 text-pos border-pos/30',
   'Sponsor Exit': 'bg-purple-500/15 text-purple-400 border-purple-500/30',
   'Sale Process': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
@@ -31,6 +29,10 @@ const TAG_COLORS = {
 const RSS_FEEDS = [
   {
     url: 'https://news.google.com/rss/search?q=%22leveraged+buyout%22+OR+%22take-private%22+OR+%22LBO%22+OR+%22buyout+fund%22&hl=en-US&gl=US&ceid=US:en',
+    source: 'Google News',
+  },
+  {
+    url: 'https://news.google.com/rss/search?q=%22private+equity%22+AND+(%22acquisition%22+OR+%22buyout%22+OR+%22take-private%22)&hl=en-US&gl=US&ceid=US:en',
     source: 'Google News',
   },
 ];
@@ -50,15 +52,16 @@ function cleanTitle(title) {
   return title.replace(/\s-\s[^-]+$/, '').trim();
 }
 
+function extractSource(title) {
+  const m = title.match(/\s-\s([^-]+)$/);
+  return m ? m[1].trim() : null;
+}
+
 export default function SponsorMonitorPanel() {
-  const [rssItems, setRssItems] = useState([]);
-  const [rssLoading, setRssLoading] = useState(true);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const mountedRef = useRef(true);
-
-  // Schedule TO from EDGAR
-  const { filings: toFilings, loading: toLoading } =
-    useEDGAR('SC TO-T,SC TO-C,SC 14D9', '', 30, 10, 600000);
 
   const fetchRSS = useCallback(async () => {
     try {
@@ -76,20 +79,31 @@ export default function SponsorMonitorPanel() {
         .filter(r => r.status === 'fulfilled')
         .flatMap(r => r.value);
 
-      // Tag each item
-      const tagged = allItems.map(item => ({
-        ...item,
-        title: cleanTitle(item.title),
-        tag: deriveTag(item.title + ' ' + (item.description || '')),
-      })).filter(item => item.tag); // Only show items that match a tag
+      // Deduplicate by cleaned title
+      const seen = new Set();
+      const tagged = allItems.map(item => {
+        const source = extractSource(item.title);
+        return {
+          ...item,
+          title: cleanTitle(item.title),
+          source,
+          tag: deriveTag(item.title + ' ' + (item.description || '')),
+        };
+      }).filter(item => {
+        if (!item.tag) return false;
+        const key = item.title.toLowerCase().slice(0, 50);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
       tagged.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-      setRssItems(tagged.slice(0, 12));
+      setItems(tagged.slice(0, 15));
       setLastUpdated(new Date());
     } catch {
       // silent
     } finally {
-      if (mountedRef.current) setRssLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 
@@ -103,28 +117,13 @@ export default function SponsorMonitorPanel() {
     };
   }, [fetchRSS]);
 
-  const loading = rssLoading || toLoading;
-
-  // Merge EDGAR Schedule TO filings into the list
-  const edgarItems = toFilings.map(f => ({
-    title: f.company,
-    link: f.url,
-    pubDate: f.filedDate,
-    tag: 'TO Filed',
-    description: f.form,
-  }));
-
-  const allItems = [...rssItems, ...edgarItems]
-    .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
-    .slice(0, 15);
-
   return (
-    <PanelCard title="Sponsor / LBO Monitor" loading={loading} lastUpdated={lastUpdated} className="min-h-[320px]">
+    <PanelCard title="Sponsor / LBO Monitor" loading={loading} lastUpdated={lastUpdated} onRefresh={fetchRSS} className="min-h-[320px]">
       <div className="max-h-[450px] overflow-y-auto">
-        {allItems.length === 0 && !loading && (
+        {items.length === 0 && !loading && (
           <p className="text-txt-secondary text-[10px] py-4 text-center">No sponsor/LBO activity</p>
         )}
-        {allItems.map((item, i) => (
+        {items.map((item, i) => (
           <a
             key={i}
             href={item.link}
@@ -140,11 +139,16 @@ export default function SponsorMonitorPanel() {
                 {timeAgo(item.pubDate)}
               </span>
             </div>
-            {item.tag && (
-              <span className={`inline-block text-[8px] font-bold tracking-wide mt-1 px-1.5 py-0.5 rounded border ${TAG_COLORS[item.tag] || 'bg-white/10 text-txt-secondary border-white/20'}`}>
-                {item.tag}
-              </span>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              {item.tag && (
+                <span className={`text-[8px] font-bold tracking-wide px-1.5 py-0.5 rounded border ${TAG_COLORS[item.tag] || 'bg-white/10 text-txt-secondary border-white/20'}`}>
+                  {item.tag}
+                </span>
+              )}
+              {item.source && (
+                <span className="text-[8px] text-txt-secondary">{item.source}</span>
+              )}
+            </div>
           </a>
         ))}
       </div>

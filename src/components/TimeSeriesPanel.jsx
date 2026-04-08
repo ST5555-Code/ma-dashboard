@@ -35,7 +35,7 @@ function CustomTooltip({ active, payload, label }) {
 export function YFTimeSeriesPanel({ title, symbol, referenceLine }) {
   const [rangeIdx, setRangeIdx] = useState(3); // default YTD
   const r = RANGES[rangeIdx];
-  const { data, loading, lastUpdated } = useYFHistory(symbol, r.range, r.interval, 3600000);
+  const { data, loading, lastUpdated, refresh } = useYFHistory(symbol, r.range, r.interval, 1800000);
   const color = CHART_COLORS[title] || '#DCB96E';
 
   return (
@@ -48,13 +48,14 @@ export function YFTimeSeriesPanel({ title, symbol, referenceLine }) {
       referenceLine={referenceLine}
       rangeIdx={rangeIdx}
       setRangeIdx={setRangeIdx}
+      onRefresh={refresh}
     />
   );
 }
 
 // For FRED-sourced charts
 // bps=true converts percentage values (e.g., 3.05) to basis points (305)
-export function FREDTimeSeriesPanel({ title, data, loading, lastUpdated, referenceLine, bps = false }) {
+export function FREDTimeSeriesPanel({ title, data, loading, lastUpdated, referenceLine, bps = false, onRefresh }) {
   const [rangeIdx, setRangeIdx] = useState(3); // default YTD
   const color = CHART_COLORS[title] || '#DCB96E';
 
@@ -95,11 +96,12 @@ export function FREDTimeSeriesPanel({ title, data, loading, lastUpdated, referen
       unit={bps ? ' bps' : ''}
       rangeIdx={rangeIdx}
       setRangeIdx={setRangeIdx}
+      onRefresh={onRefresh}
     />
   );
 }
 
-function ChartPanel({ title, data, loading, lastUpdated, color, referenceLine, rangeIdx, setRangeIdx, unit = '' }) {
+function ChartPanel({ title, data, loading, lastUpdated, color, referenceLine, rangeIdx, setRangeIdx, unit = '', onRefresh }) {
   const isInteger = unit === ' bps';
   const chartData = useMemo(() => {
     if (!data?.length) return [];
@@ -149,7 +151,7 @@ function ChartPanel({ title, data, loading, lastUpdated, color, referenceLine, r
   );
 
   return (
-    <PanelCard title={title} loading={loading} lastUpdated={lastUpdated} compact footer={rangeSelector}>
+    <PanelCard title={title} loading={loading} lastUpdated={lastUpdated} compact footer={rangeSelector} onRefresh={onRefresh}>
       {chartData.length === 0 ? (
         <p className="text-txt-secondary text-[10px] py-6 text-center">No chart data</p>
       ) : (
