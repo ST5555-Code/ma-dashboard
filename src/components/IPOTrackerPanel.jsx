@@ -87,6 +87,7 @@ function useIPOQuotes(tickers) {
 function FilingRow({ filing, tag, quoteData }) {
   const q = quoteData?.[filing.ticker] || null;
   const hasOffer = filing.offerSize != null;
+  const hasLine2 = q || hasOffer;
 
   return (
     <a
@@ -95,40 +96,41 @@ function FilingRow({ filing, tag, quoteData }) {
       rel="noopener noreferrer"
       className="block py-1.5 border-b border-white/5 last:border-0 hover:bg-white/[0.02] -mx-1 px-1 rounded transition-colors"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          <span className="text-[11px] text-txt-primary truncate font-medium">{filing.company}</span>
-          {filing.ticker && (
-            <span className="text-[8px] text-gold bg-gold/10 px-1 py-0.5 rounded font-semibold flex-shrink-0">
-              {filing.ticker}
-            </span>
-          )}
-          {tag && (
-            <span className={`text-[7px] font-bold tracking-wide px-1 py-0.5 rounded flex-shrink-0 ${tag.color}`}>
-              {tag.label}
-            </span>
-          )}
-        </div>
-        <span className="text-[9px] text-txt-secondary flex-shrink-0 ml-2">{timeAgo(filing.filedDate)}</span>
+      {/* Line 1: Ticker + Name + Offer size + Date */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-gold font-bold w-[38px] flex-shrink-0 tabular-nums">
+          {filing.ticker || '--'}
+        </span>
+        <span className="text-[10px] text-txt-secondary truncate flex-1 min-w-0">
+          {filing.company}
+        </span>
+        {tag && (
+          <span className={`text-[7px] font-bold tracking-wide px-1 py-0.5 rounded flex-shrink-0 ${tag.color}`}>
+            {tag.label}
+          </span>
+        )}
+        {hasOffer && (
+          <span className="text-[10px] text-gold font-semibold flex-shrink-0 tabular-nums">
+            {fmtSize(filing.offerSize)} @ {fmtPrice(filing.offerPrice)}
+          </span>
+        )}
+        <span className="text-[9px] text-txt-secondary flex-shrink-0">{timeAgo(filing.filedDate)}</span>
       </div>
-      {/* Market data + offer size */}
-      {(q || hasOffer) && (
-        <div className="flex items-center gap-3 mt-0.5 text-[9px]">
-          {hasOffer && (
-            <span className="text-gold font-semibold">{fmtSize(filing.offerSize)}</span>
-          )}
-          {hasOffer && filing.offerPrice && (
-            <span className="text-txt-secondary">@ {fmtPrice(filing.offerPrice)}</span>
-          )}
+
+      {/* Line 2: Current price + Change % (right-aligned under offer size) */}
+      {hasLine2 && (
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="w-[38px] flex-shrink-0" />
+          <span className="flex-1" />
           {q && (
-            <>
-              <span className="text-txt-secondary">Now {fmtPrice(q.price)}</span>
+            <div className="flex items-center gap-2 flex-shrink-0 text-[10px] tabular-nums">
+              <span className="text-txt-primary font-medium">{fmtPrice(q.price)}</span>
               {q.changePct != null && (
                 <span className={q.changePct >= 0 ? 'text-pos' : 'text-neg'}>
                   {fmtChg(q.changePct)}
                 </span>
               )}
-            </>
+            </div>
           )}
         </div>
       )}
