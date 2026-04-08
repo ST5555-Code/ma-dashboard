@@ -55,27 +55,33 @@ export default function TickerTape() {
   }, []);
 
   return (
-    <div className="bg-navy-panel border-b border-[#2a3560] py-1.5">
-      {loading && items.length === 0 ? (
-        <div className="text-txt-secondary text-[12px] px-5">Loading trending stocks...</div>
-      ) : items.length === 0 ? (
-        <div className="text-txt-secondary text-[12px] px-5">No trending data</div>
-      ) : (
-        <Marquee speed={40} pauseOnHover gradient={false}>
-          <span className="text-[9px] text-gold/50 font-bold tracking-wider px-4">MOST ACTIVE</span>
-          {items.map((item) => (
-            <div
-              key={item.sym}
-              className="inline-flex items-center gap-1.5 px-4 border-r border-[#3a4570] text-[12px]"
-            >
-              <span className="text-white font-semibold">{item.sym}</span>
-              <span className="text-white/50 text-[10px] max-w-[100px] truncate">{item.name}</span>
-              <span className="text-white">{fmt(item.price)}</span>
-              <span className={colorClass(item.changePct)}>{fmtChg(item.changePct)}</span>
-            </div>
-          ))}
-        </Marquee>
-      )}
+    <div className="bg-navy-panel border-b border-[#2a3560] flex items-center">
+      {/* Fixed label */}
+      <div className="bg-gold/80 text-navy text-[10px] font-bold px-2.5 py-2 tracking-wider flex-shrink-0 z-10">
+        ACTIVE
+      </div>
+      {/* Scrolling tape */}
+      <div className="flex-1 overflow-hidden py-1.5">
+        {loading && items.length === 0 ? (
+          <div className="text-txt-secondary text-[12px] px-5">Loading trending stocks...</div>
+        ) : items.length === 0 ? (
+          <div className="text-txt-secondary text-[12px] px-5">No trending data</div>
+        ) : (
+          <Marquee speed={40} pauseOnHover gradient={false}>
+            {items.map((item) => (
+              <div
+                key={item.sym}
+                className="inline-flex items-center gap-1.5 px-4 border-r border-[#3a4570] text-[12px]"
+              >
+                <span className="text-white font-semibold">{item.sym}</span>
+                <span className="text-white/40 text-[10px] max-w-[100px] truncate">{item.name}</span>
+                <span className="text-white">{fmt(item.price)}</span>
+                <span className={colorClass(item.changePct)}>{fmtChg(item.changePct)}</span>
+              </div>
+            ))}
+          </Marquee>
+        )}
+      </div>
     </div>
   );
 }

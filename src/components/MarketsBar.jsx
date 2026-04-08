@@ -1,3 +1,6 @@
+import MarqueeModule from 'react-fast-marquee';
+const Marquee = MarqueeModule.default || MarqueeModule;
+
 const MARKET_ITEMS = [
   // US
   { sym: '^GSPC', label: 'S&P 500' },
@@ -34,39 +37,45 @@ function colorClass(v) {
 }
 
 export default function MarketsBar({ quotes, loading }) {
+  const hasData = !loading || Object.keys(quotes).length > 0;
+
   return (
-    <div className="bg-navy px-5 py-1.5 flex items-center gap-4 overflow-x-auto border-b border-gold/30">
-      <div className="bg-gold text-navy text-[10px] font-bold px-1.5 py-0.5 tracking-wider flex-shrink-0">
+    <div className="bg-navy border-b border-gold/30 flex items-center">
+      {/* Fixed label */}
+      <div className="bg-gold text-navy text-[10px] font-bold px-2.5 py-2 tracking-wider flex-shrink-0 z-10">
         MARKETS
       </div>
-      <div className="flex items-center gap-0 overflow-x-auto">
-        {MARKET_ITEMS.map((item, i) => {
-          const q = quotes[item.sym];
-          return (
-            <div
-              key={item.sym}
-              className={`inline-flex items-baseline gap-1.5 pr-4 whitespace-nowrap text-[12px] ${
-                i > 0 ? 'pl-4 border-l border-white/25' : ''
-              }`}
-            >
-              <span className="text-white/65 text-[10px] font-semibold tracking-wide uppercase">
-                {item.label}
-              </span>
-              {loading && !q ? (
-                <span className="text-white/40">--</span>
-              ) : q ? (
-                <>
-                  <span className="text-white font-semibold">{fmt(q.price)}</span>
-                  <span className={`text-[11px] ${colorClass(q.changePct)}`}>
-                    {fmtChg(q.changePct)}
+      {/* Scrolling tape */}
+      <div className="flex-1 overflow-hidden py-1.5">
+        {!hasData ? (
+          <div className="text-txt-secondary text-[12px] px-5">Loading markets...</div>
+        ) : (
+          <Marquee speed={25} pauseOnHover gradient={false}>
+            {MARKET_ITEMS.map((item) => {
+              const q = quotes[item.sym];
+              return (
+                <div
+                  key={item.sym}
+                  className="inline-flex items-baseline gap-1.5 px-4 border-r border-white/15 whitespace-nowrap text-[12px]"
+                >
+                  <span className="text-white/65 text-[10px] font-semibold tracking-wide uppercase">
+                    {item.label}
                   </span>
-                </>
-              ) : (
-                <span className="text-white/40">N/A</span>
-              )}
-            </div>
-          );
-        })}
+                  {q ? (
+                    <>
+                      <span className="text-white font-semibold">{fmt(q.price)}</span>
+                      <span className={`text-[11px] ${colorClass(q.changePct)}`}>
+                        {fmtChg(q.changePct)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-white/40">--</span>
+                  )}
+                </div>
+              );
+            })}
+          </Marquee>
+        )}
       </div>
     </div>
   );
