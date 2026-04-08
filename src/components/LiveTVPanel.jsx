@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 const CHANNELS = [
   { name: 'Bloomberg', videoId: 'iEpJwprxDdk', ytUrl: 'https://www.youtube.com/@BloombergTelevision/live' },
   { name: 'CNBC', videoId: '9NyxcX3rhQs', ytUrl: 'https://www.youtube.com/@CNBC/live' },
-  { name: 'Fox Business', videoId: 'UiV-HNPpHWg', ytUrl: 'https://www.youtube.com/@FoxBusiness/live' },
+  { name: 'Sky News', videoId: 'YDvsBbKfLPA', ytUrl: 'https://www.youtube.com/@SkyNews/live' },
 ];
 
 function ChannelBar({ activeIdx, setActiveIdx }) {
