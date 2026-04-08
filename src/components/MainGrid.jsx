@@ -1,6 +1,7 @@
 import PanelCard from './PanelCard';
 import LiveTVPanel from './LiveTVPanel';
 import FinancingConditionsPanel from './FinancingConditionsPanel';
+import DealFlowPanel from './DealFlowPanel';
 
 function Placeholder({ label }) {
   return (
@@ -27,9 +28,7 @@ export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading,
 
       {/* Middle Column */}
       <div className="flex flex-col gap-4 order-1 md:order-2 xl:order-2">
-        <PanelCard title="Strategic Deal Flow" className="min-h-[320px]">
-          <Placeholder label="8-K Item 1.01 + S-4 filings" />
-        </PanelCard>
+        <DealFlowPanel />
         <PanelCard title="M&A News Feed" className="min-h-[280px]">
           <Placeholder label="RSS headlines — merger, acquisition, buyout" />
         </PanelCard>
