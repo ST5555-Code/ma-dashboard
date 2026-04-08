@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo } from 'react';
-import { createChart, ColorType, LineStyle } from 'lightweight-charts';
+import { createChart, ColorType, LineStyle, LineSeries } from 'lightweight-charts';
 
 const THEME = {
   background: '#141E35',
@@ -53,7 +53,7 @@ export default function LWChart({ data, color = '#DCB96E', unit = '', referenceL
       height: 160,
     });
 
-    const series = chart.addLineSeries({
+    const series = chart.addSeries(LineSeries, {
       color,
       lineWidth: 2,
       crosshairMarkerRadius: 4,
