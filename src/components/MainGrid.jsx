@@ -2,6 +2,7 @@ import PanelCard from './PanelCard';
 import LiveTVPanel from './LiveTVPanel';
 import FinancingConditionsPanel from './FinancingConditionsPanel';
 import DealFlowPanel from './DealFlowPanel';
+import MANewsFeedPanel from './MANewsFeedPanel';
 
 function Placeholder({ label }) {
   return (
@@ -29,9 +30,7 @@ export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading,
       {/* Middle Column */}
       <div className="flex flex-col gap-4 order-1 md:order-2 xl:order-2">
         <DealFlowPanel />
-        <PanelCard title="M&A News Feed" className="min-h-[280px]">
-          <Placeholder label="RSS headlines — merger, acquisition, buyout" />
-        </PanelCard>
+        <MANewsFeedPanel />
       </div>
 
       {/* Right Column */}
