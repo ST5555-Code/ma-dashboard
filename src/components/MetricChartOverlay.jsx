@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import useYFHistory from '../hooks/useYFHistory';
-import useFRED from '../hooks/useFRED';
 
 const RANGES = [
   { label: '1W', range: '5d', interval: '1d', days: 7 },
@@ -12,13 +11,12 @@ const RANGES = [
   { label: '1Y', range: '1y', interval: '1wk', days: 365 },
 ];
 
-// Define which data source each metric uses
 const METRIC_CONFIG = {
   VIX:        { type: 'yf', symbol: '^VIX', color: '#DCB96E', unit: '' },
   '10Y':      { type: 'yf', symbol: '^TNX', color: '#DCB96E', unit: '%' },
   '2Y':       { type: 'yf', symbol: '^IRX', color: '#DCB96E', unit: '%' },
   SOFR:       { type: 'fred', series: 'SOFR', color: '#DCB96E', unit: '%' },
-  SPREAD:     { type: 'fred-computed', series10: 'DGS10', series2: 'DGS2', color: '#4CAF7D', unit: '%' },
+  SPREAD:     { type: 'fred-computed', color: '#4CAF7D', unit: '%' },
   HY_OAS:     { type: 'fred', series: 'BAMLH0A0HYM2', color: '#C94040', unit: ' bps', bps: true },
   IG_OAS:     { type: 'fred', series: 'BAMLC0A0CM', color: '#4CAF7D', unit: ' bps', bps: true },
 };
@@ -38,16 +36,23 @@ function CustomTooltip({ active, payload, label, unit }) {
   );
 }
 
+function filterByRange(data, rangeIdx) {
+  const r = RANGES[rangeIdx];
+  if (r.days === null) {
+    const year = new Date().getFullYear();
+    return data.filter(d => d.date >= `${year}-01-01`);
+  }
+  const cutoff = new Date(Date.now() - r.days * 86400000).toISOString().slice(0, 10);
+  return data.filter(d => d.date >= cutoff);
+}
+
 function YFChart({ symbol, rangeIdx, color, unit }) {
   const r = RANGES[rangeIdx];
   const { data } = useYFHistory(symbol, r.range, r.interval, 0);
   return <ChartBody data={data} color={color} unit={unit} />;
 }
 
-function FREDChart({ series, rangeIdx, color, unit, bps }) {
-  const seriesIds = useMemo(() => [series], [series]);
-  const { data: fredData } = useFRED(seriesIds, 0);
-
+function FREDChartFromData({ fredData, series, rangeIdx, color, unit, bps }) {
   const chartData = useMemo(() => {
     const obs = fredData?.[series]?.observations;
     if (!obs?.length) return [];
@@ -60,10 +65,7 @@ function FREDChart({ series, rangeIdx, color, unit, bps }) {
   return <ChartBody data={chartData} color={color} unit={unit} />;
 }
 
-function FREDSpreadChart({ rangeIdx, color, unit }) {
-  const seriesIds = useMemo(() => ['DGS10', 'DGS2'], []);
-  const { data: fredData } = useFRED(seriesIds, 0);
-
+function FREDSpreadChartFromData({ fredData, rangeIdx, color, unit }) {
   const chartData = useMemo(() => {
     const dgs10 = fredData?.DGS10?.observations;
     const dgs2 = fredData?.DGS2?.observations;
@@ -78,16 +80,6 @@ function FREDSpreadChart({ rangeIdx, color, unit }) {
   }, [fredData, rangeIdx]);
 
   return <ChartBody data={chartData} color={color} unit={unit} />;
-}
-
-function filterByRange(data, rangeIdx) {
-  const r = RANGES[rangeIdx];
-  if (r.days === null) {
-    const year = new Date().getFullYear();
-    return data.filter(d => d.date >= `${year}-01-01`);
-  }
-  const cutoff = new Date(Date.now() - r.days * 86400000).toISOString().slice(0, 10);
-  return data.filter(d => d.date >= cutoff);
 }
 
 function ChartBody({ data, color, unit }) {
@@ -110,16 +102,17 @@ function ChartBody({ data, color, unit }) {
   const latest = chartData[chartData.length - 1]?.value;
   const first = chartData[0]?.value;
   const change = latest != null && first != null ? latest - first : null;
+  const isBps = unit === ' bps';
 
   return (
     <>
       <div className="flex items-baseline gap-2 mb-2">
         <span className="text-[16px] font-bold tabular-nums" style={{ color }}>
-          {unit === ' bps' ? Math.round(latest) : latest?.toFixed(2)}{unit}
+          {isBps ? Math.round(latest) : latest?.toFixed(2)}{unit}
         </span>
         {change != null && (
           <span className={`text-[11px] font-semibold tabular-nums ${change >= 0 ? 'text-pos' : 'text-neg'}`}>
-            {change >= 0 ? '+' : ''}{unit === ' bps' ? Math.round(change) : change.toFixed(2)} period
+            {change >= 0 ? '+' : ''}{isBps ? Math.round(change) : change.toFixed(2)} period
           </span>
         )}
       </div>
@@ -135,7 +128,7 @@ function ChartBody({ data, color, unit }) {
   );
 }
 
-export default function MetricChartOverlay({ metricKey, title, onClose }) {
+export default function MetricChartOverlay({ metricKey, title, fredData, onClose }) {
   const [rangeIdx, setRangeIdx] = useState(3);
   const config = METRIC_CONFIG[metricKey];
   if (!config) return null;
@@ -146,26 +139,23 @@ export default function MetricChartOverlay({ metricKey, title, onClose }) {
         className="bg-navy-panel border border-gold/30 rounded-lg shadow-2xl w-[480px] max-w-[90vw] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-gold/10">
           <h3 className="text-[12px] font-bold tracking-wider text-gold uppercase">{title}</h3>
           <button onClick={onClose} className="text-txt-secondary hover:text-white text-[14px] cursor-pointer leading-none">✕</button>
         </div>
 
-        {/* Chart */}
         <div className="px-4 py-3">
           {config.type === 'yf' && (
             <YFChart symbol={config.symbol} rangeIdx={rangeIdx} color={config.color} unit={config.unit} />
           )}
           {config.type === 'fred' && (
-            <FREDChart series={config.series} rangeIdx={rangeIdx} color={config.color} unit={config.unit} bps={config.bps} />
+            <FREDChartFromData fredData={fredData} series={config.series} rangeIdx={rangeIdx} color={config.color} unit={config.unit} bps={config.bps} />
           )}
           {config.type === 'fred-computed' && (
-            <FREDSpreadChart rangeIdx={rangeIdx} color={config.color} unit={config.unit} />
+            <FREDSpreadChartFromData fredData={fredData} rangeIdx={rangeIdx} color={config.color} unit={config.unit} />
           )}
         </div>
 
-        {/* Range selector */}
         <div className="flex gap-1 px-4 pb-3">
           {RANGES.map((r, i) => (
             <button

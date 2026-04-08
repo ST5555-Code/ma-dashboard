@@ -31,7 +31,7 @@ const ALL_SYMBOLS = [
   '^IXIC', '^RUT', 'MNA', 'MRGR',
 ];
 
-const FRED_SERIES = ['SOFR', 'BAMLH0A0HYM2', 'BAMLC0A0CM', 'DGS10', 'DGS2'];
+const FRED_SERIES = ['SOFR', 'BAMLH0A0HYM2', 'BAMLC0A0CM', 'DGS1', 'DGS2', 'DGS5', 'DGS10', 'DGS30'];
 
 function App() {
   const symbols = useMemo(() => ALL_SYMBOLS, []);

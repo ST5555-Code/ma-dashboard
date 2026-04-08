@@ -155,6 +155,7 @@ export default function FinancingConditionsPanel({ fredData, fredLoading, fredLa
         <MetricChartOverlay
           metricKey={chartMetric.key}
           title={chartMetric.title}
+          fredData={fredData}
           onClose={() => setChartMetric(null)}
         />
       )}

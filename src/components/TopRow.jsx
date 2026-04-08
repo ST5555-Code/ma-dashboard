@@ -21,7 +21,7 @@ export default function TopRow({ fredData, fredLoading, fredLastUpdated, refresh
         bps
         onRefresh={refreshFRED}
       />
-      <YieldCurvePanel />
+      <YieldCurvePanel fredData={fredData} loading={fredLoading} lastUpdated={fredLastUpdated} onRefresh={refreshFRED} />
       <LiveTVPanel />
     </div>
   );
