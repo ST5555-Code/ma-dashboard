@@ -33,9 +33,18 @@ async function searchFilings(forms, query, days, limit) {
 
   return (data.hits?.hits || []).map(h => {
     const s = h._source;
+    // Clean company name: strip CIK, ticker suffixes from EDGAR display_names
+    let rawName = s.display_names?.[0] || s.entity_name || 'Unknown';
+    rawName = rawName.replace(/\s*\(CIK\s*\d+\)\s*/gi, '').replace(/\s*\([A-Z0-9, -]+\)\s*$/g, '').trim();
+    // Extract ticker from tickers array or from parenthetical in display name
+    let ticker = s.tickers?.[0] || null;
+    if (!ticker) {
+      const m = (s.display_names?.[0] || '').match(/\(([A-Z]{1,5})\)/);
+      if (m) ticker = m[1];
+    }
     return {
-      company: s.display_names?.[0] || s.entity_name || 'Unknown',
-      ticker: s.tickers?.[0] || null,
+      company: rawName,
+      ticker,
       cik: s.entity_id || null,
       form: s.form_type,
       filedDate: s.file_date,
