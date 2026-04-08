@@ -30,14 +30,20 @@ function getFredSpread(fredData, seriesId) {
   return { bps, change };
 }
 
+function ChartIcon() {
+  return (
+    <span className="text-[9px] text-gold/30 group-hover:text-gold/80 transition-colors ml-0.5">↗</span>
+  );
+}
+
 function ClickableRow({ label, value, unit, signalKey, onClick }) {
   const s = signal(signalKey, value);
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0 w-full text-left cursor-pointer hover:bg-white/[0.03] -mx-1 px-1 rounded transition-colors"
+      className="group flex items-center justify-between py-1.5 border-b border-white/5 last:border-0 w-full text-left cursor-pointer hover:bg-white/[0.03] -mx-1 px-1 rounded transition-colors"
     >
-      <span className="text-txt-secondary text-[11px] hover:text-gold transition-colors">{label}</span>
+      <span className="text-txt-secondary text-[11px] group-hover:text-gold transition-colors">{label}<ChartIcon /></span>
       <div className="flex items-center gap-2">
         <span className={`text-[13px] font-semibold tabular-nums ${signalColor[s]}`}>
           {value != null ? `${typeof value === 'number' && Number.isInteger(value) ? value : value.toFixed(2)}${unit || ''}` : '--'}
@@ -54,9 +60,9 @@ function ClickableSpreadRow({ label, bps, change, signalKey, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0 w-full text-left cursor-pointer hover:bg-white/[0.03] -mx-1 px-1 rounded transition-colors"
+      className="group flex items-center justify-between py-1.5 border-b border-white/5 last:border-0 w-full text-left cursor-pointer hover:bg-white/[0.03] -mx-1 px-1 rounded transition-colors"
     >
-      <span className="text-txt-secondary text-[11px] hover:text-gold transition-colors">{label}</span>
+      <span className="text-txt-secondary text-[11px] group-hover:text-gold transition-colors">{label}<ChartIcon /></span>
       <div className="flex items-center gap-2">
         <span className={`text-[13px] font-semibold tabular-nums ${signalColor[s]}`}>
           {bps != null ? `${bps} bps` : '--'}
