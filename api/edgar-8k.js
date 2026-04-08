@@ -22,10 +22,10 @@ async function parseOfferSize(cik, accession, filename) {
     });
     if (!r.ok) return null;
 
-    // Read first 25KB — cover page has the offering terms
+    // Read first 80KB — cover page pricing can be deep in the HTML due to inline styles
     const reader = r.body.getReader();
     let text = '';
-    while (text.length < 25000) {
+    while (text.length < 80000) {
       const { done, value } = await reader.read();
       if (done) break;
       text += new TextDecoder().decode(value);
