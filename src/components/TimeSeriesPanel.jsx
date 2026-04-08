@@ -4,9 +4,8 @@ import PanelCard from './PanelCard';
 import useYFHistory from '../hooks/useYFHistory';
 
 const CHART_COLORS = {
-  VIX: '#DCB96E',
-  'HY OAS': '#C94040',
-  '10Y-2Y Spread': '#4CAF7D',
+  'Volatility (VIX)': '#DCB96E',
+  'HY Spread (HY OAS)': '#C94040',
 };
 
 const RANGES = [
