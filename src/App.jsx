@@ -1,9 +1,30 @@
-import { useMemo } from 'react';
+import { useMemo, Component } from 'react';
 import StickyHeader from './components/StickyHeader';
 import MainGrid from './components/MainGrid';
 import BelowFold from './components/BelowFold';
 import useQuotes from './hooks/useQuotes';
 import useFRED from './hooks/useFRED';
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error: error.message };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ background: '#1E2846', color: '#C94040', padding: 40, fontFamily: 'monospace' }}>
+          <h1 style={{ color: '#DCB96E' }}>Dashboard Error</h1>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{this.state.error}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const ALL_SYMBOLS = [
   '^VIX', '^TNX', '^IRX', 'HYG', 'LQD', '^GSPC',
@@ -24,17 +45,19 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-navy text-txt-primary font-sans">
-      <StickyHeader quotes={quotes} loading={quotesLoading} onRefresh={handleRefreshAll} />
-      <MainGrid
-        quotes={quotes}
-        quotesLoading={quotesLoading}
-        fredData={fredData}
-        fredLoading={fredLoading}
-        fredLastUpdated={fredLastUpdated}
-      />
-      <BelowFold />
-    </div>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-navy text-txt-primary font-sans">
+        <StickyHeader quotes={quotes} loading={quotesLoading} onRefresh={handleRefreshAll} />
+        <MainGrid
+          quotes={quotes}
+          quotesLoading={quotesLoading}
+          fredData={fredData}
+          fredLoading={fredLoading}
+          fredLastUpdated={fredLastUpdated}
+        />
+        <BelowFold />
+      </div>
+    </ErrorBoundary>
   );
 }
 
