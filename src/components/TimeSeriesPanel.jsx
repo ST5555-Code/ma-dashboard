@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import PanelCard from './PanelCard';
 import useYFHistory from '../hooks/useYFHistory';
-import LWChart from './LWChart';
 
 const CHART_COLORS = {
   'Volatility (VIX)': '#DCB96E',
@@ -32,70 +31,25 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-// For YF-sourced charts (VIX) — uses Lightweight Charts
+// For YF-sourced charts (VIX)
 export function YFTimeSeriesPanel({ title, symbol, referenceLine }) {
   const [rangeIdx, setRangeIdx] = useState(3); // default YTD
   const r = RANGES[rangeIdx];
   const { data, loading, lastUpdated, refresh } = useYFHistory(symbol, r.range, r.interval, 1800000);
   const color = CHART_COLORS[title] || '#DCB96E';
 
-  const stats = useMemo(() => {
-    if (!data?.length) return null;
-    const values = data.map(d => d.value).filter(v => v != null);
-    const current = values[values.length - 1];
-    const previous = values.length >= 2 ? values[values.length - 2] : null;
-    const high = Math.max(...values);
-    const low = Math.min(...values);
-    const change = previous != null ? current - previous : null;
-    const changePct = previous != null && previous !== 0 ? (change / previous) * 100 : null;
-    return { current, high, low, change, changePct };
-  }, [data]);
-
-  const rangeSelector = (
-    <div className="flex gap-1">
-      {RANGES.map((rng, i) => (
-        <button
-          key={rng.label}
-          onClick={() => setRangeIdx(i)}
-          className={`flex-1 text-[8px] font-semibold py-0.5 rounded-sm cursor-pointer transition-all ${
-            i === rangeIdx ? 'bg-gold/20 text-gold' : 'text-txt-secondary hover:text-white'
-          }`}
-        >
-          {rng.label}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
-    <PanelCard title={title} loading={loading} lastUpdated={lastUpdated} compact footer={rangeSelector} onRefresh={refresh}>
-      {!data?.length ? (
-        <p className="text-txt-secondary text-[10px] py-6 text-center">No chart data</p>
-      ) : (
-        <>
-          {stats && (
-            <div className="flex items-baseline justify-between mb-1">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[18px] font-bold tabular-nums" style={{ color }}>
-                  {stats.current.toFixed(2)}
-                </span>
-                {stats.change != null && (
-                  <span className={`text-[11px] font-semibold tabular-nums ${stats.change >= 0 ? 'text-pos' : 'text-neg'}`}>
-                    {stats.change >= 0 ? '+' : ''}{stats.change.toFixed(2)}
-                    {stats.changePct != null && ` (${stats.changePct >= 0 ? '+' : ''}${stats.changePct.toFixed(1)}%)`}
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-3 text-[9px] text-txt-secondary">
-                <span>H <span className="text-txt-primary font-medium">{stats.high.toFixed(2)}</span></span>
-                <span>L <span className="text-txt-primary font-medium">{stats.low.toFixed(2)}</span></span>
-              </div>
-            </div>
-          )}
-          <LWChart data={data} color={color} referenceLine={referenceLine} />
-        </>
-      )}
-    </PanelCard>
+    <ChartPanel
+      title={title}
+      data={data}
+      loading={loading}
+      lastUpdated={lastUpdated}
+      color={color}
+      referenceLine={referenceLine}
+      rangeIdx={rangeIdx}
+      setRangeIdx={setRangeIdx}
+      onRefresh={refresh}
+    />
   );
 }
 

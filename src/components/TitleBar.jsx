@@ -4,7 +4,6 @@ const portals = [
   { label: 'Energy', href: 'https://media-dashboards.vercel.app/energy/' },
   { label: 'Cleantech', href: 'https://media-dashboards.vercel.app/cleantech/' },
   { label: 'Media', href: 'https://media-dashboards.vercel.app/media/' },
-  { label: 'PB', href: 'https://media-dashboards.vercel.app/private-banking/' },
   { label: 'Hormuz', href: 'https://media-dashboards.vercel.app/hormuz/' },
 ];
 
@@ -42,27 +41,29 @@ export default function TitleBar({ onRefresh }) {
 
   return (
     <div className="bg-navy border-b-[3px] border-gold px-5 py-2 flex items-center justify-between gap-4">
-      {/* Title — clickable as HOME */}
-      <a href="https://media-dashboards.vercel.app/" className="flex-shrink-0 hover:opacity-80 transition-opacity">
-        <div className="text-[16px] font-bold tracking-[2px] text-white uppercase">
-          M&A <span className="text-gold">Intelligence</span> Monitor
-        </div>
-      </a>
+      <div className="text-[16px] font-bold tracking-[2px] text-white uppercase flex-shrink-0">
+        M&A <span className="text-gold">Intelligence</span> Monitor
+      </div>
 
       {/* Portal links — center */}
-      <div className="hidden md:flex items-center gap-1 text-[10px] flex-shrink-0">
-        {portals.map((p, i) => (
-          <span key={p.label} className="flex items-center">
-            {i > 0 && <span className="text-white/15 mx-1">|</span>}
-            <a
-              href={p.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-txt-secondary hover:text-gold transition-colors whitespace-nowrap"
-            >
-              {p.label}
-            </a>
-          </span>
+      {/* Portal links */}
+      <div className="hidden md:flex items-center gap-1.5 text-[10px] flex-shrink-0">
+        <a
+          href="https://media-dashboards.vercel.app/"
+          className="text-gold border border-gold/40 px-2 py-0.5 rounded-sm hover:bg-gold hover:text-navy transition-all whitespace-nowrap font-semibold"
+        >
+          Home
+        </a>
+        {portals.map((p) => (
+          <a
+            key={p.label}
+            href={p.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-txt-secondary border border-gold/20 px-2 py-0.5 rounded-sm hover:text-gold hover:border-gold/40 transition-all whitespace-nowrap"
+          >
+            {p.label}
+          </a>
         ))}
       </div>
 
