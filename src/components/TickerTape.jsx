@@ -1,4 +1,5 @@
-import Marquee from 'react-fast-marquee';
+import MarqueeModule from 'react-fast-marquee';
+const Marquee = MarqueeModule.default || MarqueeModule;
 
 // Fixed watchlist from brief + most active will be added later
 const TICKER_SYMBOLS = [
