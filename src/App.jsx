@@ -37,7 +37,7 @@ function App() {
   const symbols = useMemo(() => ALL_SYMBOLS, []);
   const fredSeries = useMemo(() => FRED_SERIES, []);
 
-  const { quotes, loading: quotesLoading, refresh: refreshQuotes } = useQuotes(symbols, 60000);
+  const { quotes, loading: quotesLoading, lastUpdated: quotesLastUpdated, refresh: refreshQuotes } = useQuotes(symbols, 60000);
   const { data: fredData, loading: fredLoading, lastUpdated: fredLastUpdated, refresh: refreshFRED } = useFRED(fredSeries, 3600000);
 
   async function handleRefreshAll() {
@@ -55,7 +55,7 @@ function App() {
           fredLoading={fredLoading}
           fredLastUpdated={fredLastUpdated}
         />
-        <BelowFold />
+        <BelowFold quotes={quotes} quotesLoading={quotesLoading} quotesLastUpdated={quotesLastUpdated} />
       </div>
     </ErrorBoundary>
   );

@@ -1,4 +1,5 @@
 import PanelCard from './PanelCard';
+import DealEnvironmentPanel from './DealEnvironmentPanel';
 
 function Placeholder({ label }) {
   return (
@@ -6,15 +7,12 @@ function Placeholder({ label }) {
   );
 }
 
-export default function BelowFold() {
+export default function BelowFold({ quotes, quotesLoading, quotesLastUpdated }) {
   return (
     <div className="px-4 pb-4 flex flex-col gap-4">
-      {/* Deal Environment — full width */}
-      <PanelCard title="Deal Environment" className="min-h-[160px]">
-        <Placeholder label="MNA / MRGR + TIGHT / NORMAL / WIDE signal" />
-      </PanelCard>
+      <DealEnvironmentPanel quotes={quotes} loading={quotesLoading} lastUpdated={quotesLastUpdated} />
 
-      {/* Charts row */}
+      {/* Charts row — Step 12 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <PanelCard title="VIX" className="min-h-[200px]">
           <Placeholder label="VIX time-series chart" />

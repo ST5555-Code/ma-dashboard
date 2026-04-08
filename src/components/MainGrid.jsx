@@ -1,14 +1,9 @@
-import PanelCard from './PanelCard';
 import LiveTVPanel from './LiveTVPanel';
 import FinancingConditionsPanel from './FinancingConditionsPanel';
 import DealFlowPanel from './DealFlowPanel';
 import MANewsFeedPanel from './MANewsFeedPanel';
-
-function Placeholder({ label }) {
-  return (
-    <p className="text-txt-secondary text-xs text-center py-6">{label} — coming soon</p>
-  );
-}
+import IPOTrackerPanel from './IPOTrackerPanel';
+import SponsorMonitorPanel from './SponsorMonitorPanel';
 
 export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading, fredLastUpdated }) {
   return (
@@ -22,9 +17,7 @@ export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading,
           quotes={quotes}
           quotesLoading={quotesLoading}
         />
-        <PanelCard title="IPO Tracker" className="min-h-[280px]">
-          <Placeholder label="424B4 priced + S-1 filed" />
-        </PanelCard>
+        <IPOTrackerPanel />
       </div>
 
       {/* Middle Column */}
@@ -36,9 +29,7 @@ export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading,
       {/* Right Column */}
       <div className="flex flex-col gap-4 order-2 md:order-3 xl:order-3">
         <LiveTVPanel />
-        <PanelCard title="Sponsor / LBO Monitor" className="min-h-[320px]">
-          <Placeholder label="Take-private, LBO, sponsor exit" />
-        </PanelCard>
+        <SponsorMonitorPanel />
       </div>
     </div>
   );
