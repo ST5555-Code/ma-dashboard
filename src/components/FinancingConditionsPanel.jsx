@@ -1,32 +1,23 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import PanelCard from './PanelCard';
+import MetricChartOverlay from './MetricChartOverlay';
 
-// Threshold logic: green = accommodative, red = restrictive
 function signal(metric, value) {
   if (value == null) return 'neutral';
   switch (metric) {
-    case 'SOFR':       return value < 4.5 ? 'green' : value > 5.5 ? 'red' : 'neutral';
-    case '10Y':        return value < 4.0 ? 'green' : value > 5.0 ? 'red' : 'neutral';
-    case '2Y':         return value < 4.0 ? 'green' : value > 5.0 ? 'red' : 'neutral';
-    case 'SPREAD':     return value > 0.5 ? 'green' : value < -0.5 ? 'red' : 'neutral';
-    case 'VIX':        return value < 18 ? 'green' : value > 25 ? 'red' : 'neutral';
-    case 'HY_OAS':     return value < 350 ? 'green' : value > 500 ? 'red' : 'neutral';
-    case 'IG_OAS':     return value < 100 ? 'green' : value > 150 ? 'red' : 'neutral';
-    default:           return 'neutral';
+    case 'SOFR':   return value < 4.5 ? 'green' : value > 5.5 ? 'red' : 'neutral';
+    case '10Y':    return value < 4.0 ? 'green' : value > 5.0 ? 'red' : 'neutral';
+    case '2Y':     return value < 4.0 ? 'green' : value > 5.0 ? 'red' : 'neutral';
+    case 'SPREAD': return value > 0.5 ? 'green' : value < -0.5 ? 'red' : 'neutral';
+    case 'VIX':    return value < 18 ? 'green' : value > 25 ? 'red' : 'neutral';
+    case 'HY_OAS': return value < 350 ? 'green' : value > 500 ? 'red' : 'neutral';
+    case 'IG_OAS': return value < 100 ? 'green' : value > 150 ? 'red' : 'neutral';
+    default:       return 'neutral';
   }
 }
 
-const signalColor = {
-  green: 'text-pos',
-  red: 'text-neg',
-  neutral: 'text-txt-primary',
-};
-
-const dotColor = {
-  green: 'bg-pos',
-  red: 'bg-neg',
-  neutral: 'bg-txt-secondary',
-};
+const signalColor = { green: 'text-pos', red: 'text-neg', neutral: 'text-txt-primary' };
+const dotColor = { green: 'bg-pos', red: 'bg-neg', neutral: 'bg-txt-secondary' };
 
 function getFredSpread(fredData, seriesId) {
   const obs = fredData?.[seriesId]?.observations;
@@ -39,28 +30,33 @@ function getFredSpread(fredData, seriesId) {
   return { bps, change };
 }
 
-function Row({ label, value, unit, signalKey }) {
+function ClickableRow({ label, value, unit, signalKey, onClick }) {
   const s = signal(signalKey, value);
   return (
-    <div className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-      <span className="text-txt-secondary text-[11px]">{label}</span>
+    <button
+      onClick={onClick}
+      className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0 w-full text-left cursor-pointer hover:bg-white/[0.03] -mx-1 px-1 rounded transition-colors"
+    >
+      <span className="text-txt-secondary text-[11px] hover:text-gold transition-colors">{label}</span>
       <div className="flex items-center gap-2">
         <span className={`text-[13px] font-semibold tabular-nums ${signalColor[s]}`}>
           {value != null ? `${typeof value === 'number' && Number.isInteger(value) ? value : value.toFixed(2)}${unit || ''}` : '--'}
         </span>
         <span className={`w-1.5 h-1.5 rounded-full ${dotColor[s]}`} />
       </div>
-    </div>
+    </button>
   );
 }
 
-function SpreadRow({ label, bps, change, signalKey }) {
+function ClickableSpreadRow({ label, bps, change, signalKey, onClick }) {
   const s = signal(signalKey, bps);
-  // For OAS: wider (positive change) = bad, tighter (negative) = good
   const chgColor = change == null || change === 0 ? 'text-txt-secondary' : change < 0 ? 'text-pos' : 'text-neg';
   return (
-    <div className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-      <span className="text-txt-secondary text-[11px]">{label}</span>
+    <button
+      onClick={onClick}
+      className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0 w-full text-left cursor-pointer hover:bg-white/[0.03] -mx-1 px-1 rounded transition-colors"
+    >
+      <span className="text-txt-secondary text-[11px] hover:text-gold transition-colors">{label}</span>
       <div className="flex items-center gap-2">
         <span className={`text-[13px] font-semibold tabular-nums ${signalColor[s]}`}>
           {bps != null ? `${bps} bps` : '--'}
@@ -72,72 +68,95 @@ function SpreadRow({ label, bps, change, signalKey }) {
         )}
         <span className={`w-1.5 h-1.5 rounded-full ${dotColor[s]}`} />
       </div>
-    </div>
+    </button>
   );
 }
 
 export default function FinancingConditionsPanel({ fredData, fredLoading, fredLastUpdated, quotes, quotesLoading }) {
+  const [chartMetric, setChartMetric] = useState(null);
+
   const hySpread = useMemo(() => getFredSpread(fredData, 'BAMLH0A0HYM2'), [fredData]);
   const igSpread = useMemo(() => getFredSpread(fredData, 'BAMLC0A0CM'), [fredData]);
 
-  const rows = useMemo(() => {
+  const metrics = useMemo(() => {
     const sofr = fredData?.SOFR?.latest?.value;
     const tenY = quotes?.['^TNX']?.price;
     const twoY = quotes?.['^IRX']?.price;
     const spread = (tenY != null && twoY != null) ? tenY - twoY : null;
     const vix = quotes?.['^VIX']?.price;
-
-    return [
-      { label: 'SOFR', value: sofr, unit: '%', signalKey: 'SOFR' },
-      { label: '10Y UST Yield', value: tenY, unit: '%', signalKey: '10Y' },
-      { label: '2Y UST Yield', value: twoY, unit: '%', signalKey: '2Y' },
-      { label: '10Y-2Y Spread', value: spread, unit: '%', signalKey: 'SPREAD' },
-      { label: 'VIX', value: vix, unit: '', signalKey: 'VIX' },
-    ];
+    return { sofr, tenY, twoY, spread, vix };
   }, [fredData, quotes]);
-
-  const allSignalValues = [
-    ...rows.map(r => ({ key: r.signalKey, value: r.value })),
-    { key: 'HY_OAS', value: hySpread.bps },
-    { key: 'IG_OAS', value: igSpread.bps },
-  ];
 
   const loading = fredLoading || quotesLoading;
 
   return (
     <PanelCard title="Financing Conditions" loading={loading} lastUpdated={fredLastUpdated}>
       <div className="flex flex-col">
-        {rows.map((r) => (
-          <Row key={r.label} label={r.label} value={r.value} unit={r.unit} signalKey={r.signalKey} />
-        ))}
-        <SpreadRow label="HY Spread (HY OAS)" bps={hySpread.bps} change={hySpread.change} signalKey="HY_OAS" />
-        <SpreadRow label="IG Spread (IG OAS)" bps={igSpread.bps} change={igSpread.change} signalKey="IG_OAS" />
+        {/* VIX at top, separated */}
+        <ClickableRow
+          label="VIX"
+          value={metrics.vix}
+          unit=""
+          signalKey="VIX"
+          onClick={() => setChartMetric({ key: 'VIX', title: 'VIX' })}
+        />
+        <div className="border-b border-gold/15 my-1" />
+
+        {/* Rates */}
+        <ClickableRow
+          label="SOFR"
+          value={metrics.sofr}
+          unit="%"
+          signalKey="SOFR"
+          onClick={() => setChartMetric({ key: 'SOFR', title: 'SOFR' })}
+        />
+        <ClickableRow
+          label="10Y UST Yield"
+          value={metrics.tenY}
+          unit="%"
+          signalKey="10Y"
+          onClick={() => setChartMetric({ key: '10Y', title: '10Y UST Yield' })}
+        />
+        <ClickableRow
+          label="2Y UST Yield"
+          value={metrics.twoY}
+          unit="%"
+          signalKey="2Y"
+          onClick={() => setChartMetric({ key: '2Y', title: '2Y UST Yield' })}
+        />
+        <ClickableRow
+          label="10Y-2Y Spread"
+          value={metrics.spread}
+          unit="%"
+          signalKey="SPREAD"
+          onClick={() => setChartMetric({ key: 'SPREAD', title: '10Y-2Y Spread' })}
+        />
+
+        {/* Credit spreads */}
+        <ClickableSpreadRow
+          label="HY Spread (HY OAS)"
+          bps={hySpread.bps}
+          change={hySpread.change}
+          signalKey="HY_OAS"
+          onClick={() => setChartMetric({ key: 'HY_OAS', title: 'HY Spread (HY OAS)' })}
+        />
+        <ClickableSpreadRow
+          label="IG Spread (IG OAS)"
+          bps={igSpread.bps}
+          change={igSpread.change}
+          signalKey="IG_OAS"
+          onClick={() => setChartMetric({ key: 'IG_OAS', title: 'IG Spread (IG OAS)' })}
+        />
       </div>
 
-      <CompositeSignal values={allSignalValues} />
+      {/* Floating chart overlay */}
+      {chartMetric && (
+        <MetricChartOverlay
+          metricKey={chartMetric.key}
+          title={chartMetric.title}
+          onClose={() => setChartMetric(null)}
+        />
+      )}
     </PanelCard>
-  );
-}
-
-function CompositeSignal({ values }) {
-  const greenCount = values.filter(v => signal(v.key, v.value) === 'green').length;
-  const redCount = values.filter(v => signal(v.key, v.value) === 'red').length;
-
-  let label, color;
-  if (greenCount >= 4) {
-    label = 'ACCOMMODATIVE';
-    color = 'text-pos border-pos/30 bg-pos/10';
-  } else if (redCount >= 4) {
-    label = 'RESTRICTIVE';
-    color = 'text-neg border-neg/30 bg-neg/10';
-  } else {
-    label = 'MIXED';
-    color = 'text-gold border-gold/30 bg-gold/10';
-  }
-
-  return (
-    <div className={`mt-3 py-2 px-3 rounded border text-center text-[11px] font-bold tracking-wider ${color}`}>
-      {label}
-    </div>
   );
 }
