@@ -42,7 +42,7 @@ function Player({ videoId, name, fill }) {
 }
 
 function FloatingTV({ activeIdx, setActiveIdx, onDock, onMinimize }) {
-  const [pos, setPos] = useState({ x: 60, y: 80 });
+  const [pos, setPos] = useState(() => ({ x: window.innerWidth - 520, y: 80 }));
   const [dragging, setDragging] = useState(false);
   const [dragStart, setDragStart] = useState(null);
   const ch = CHANNELS[activeIdx];
