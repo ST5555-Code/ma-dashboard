@@ -1,12 +1,21 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import PanelCard from './PanelCard';
+import useYFHistory from '../hooks/useYFHistory';
 
 const CHART_COLORS = {
   VIX: '#DCB96E',
   'HY OAS': '#C94040',
   '10Y-2Y Spread': '#4CAF7D',
 };
+
+const RANGES = [
+  { label: '1W', range: '5d', interval: '1d' },
+  { label: '1M', range: '1mo', interval: '1d' },
+  { label: '3M', range: '3mo', interval: '1d' },
+  { label: 'YTD', range: 'ytd', interval: '1d' },
+  { label: '1Y', range: '1y', interval: '1wk' },
+];
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -23,9 +32,67 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-export default function TimeSeriesPanel({ title, data, loading, lastUpdated, referenceLine }) {
+// For YF-sourced charts (VIX)
+export function YFTimeSeriesPanel({ title, symbol, referenceLine }) {
+  const [rangeIdx, setRangeIdx] = useState(3); // default YTD
+  const r = RANGES[rangeIdx];
+  const { data, loading, lastUpdated } = useYFHistory(symbol, r.range, r.interval, 3600000);
   const color = CHART_COLORS[title] || '#DCB96E';
 
+  return (
+    <ChartPanel
+      title={title}
+      data={data}
+      loading={loading}
+      lastUpdated={lastUpdated}
+      color={color}
+      referenceLine={referenceLine}
+      rangeIdx={rangeIdx}
+      setRangeIdx={setRangeIdx}
+    />
+  );
+}
+
+// For FRED-sourced charts (HY OAS, 10Y-2Y)
+export function FREDTimeSeriesPanel({ title, data, loading, lastUpdated, referenceLine }) {
+  const [rangeIdx, setRangeIdx] = useState(3); // default YTD
+  const color = CHART_COLORS[title] || '#DCB96E';
+
+  // Filter FRED data based on selected range
+  const filteredData = useMemo(() => {
+    if (!data?.length) return [];
+    const now = new Date();
+    const cutoffs = {
+      0: 7,    // 1W
+      1: 30,   // 1M
+      2: 90,   // 3M
+      3: null,  // YTD — filter by year
+      4: 365,  // 1Y
+    };
+    const days = cutoffs[rangeIdx];
+    if (days === null) {
+      const year = now.getFullYear();
+      return data.filter(d => d.date >= `${year}-01-01`);
+    }
+    const cutoff = new Date(now.getTime() - days * 86400000).toISOString().slice(0, 10);
+    return data.filter(d => d.date >= cutoff);
+  }, [data, rangeIdx]);
+
+  return (
+    <ChartPanel
+      title={title}
+      data={filteredData}
+      loading={loading}
+      lastUpdated={lastUpdated}
+      color={color}
+      referenceLine={referenceLine}
+      rangeIdx={rangeIdx}
+      setRangeIdx={setRangeIdx}
+    />
+  );
+}
+
+function ChartPanel({ title, data, loading, lastUpdated, color, referenceLine, rangeIdx, setRangeIdx }) {
   const chartData = useMemo(() => {
     if (!data?.length) return [];
     return data.map(d => ({
@@ -61,9 +128,8 @@ export default function TimeSeriesPanel({ title, data, loading, lastUpdated, ref
         <p className="text-txt-secondary text-[10px] py-6 text-center">No chart data</p>
       ) : (
         <>
-          {/* Stats header */}
           {stats && (
-            <div className="flex items-baseline justify-between mb-2">
+            <div className="flex items-baseline justify-between mb-1.5">
               <div className="flex items-baseline gap-2">
                 <span className="text-[18px] font-bold tabular-nums" style={{ color }}>
                   {stats.current.toFixed(2)}
@@ -82,7 +148,7 @@ export default function TimeSeriesPanel({ title, data, loading, lastUpdated, ref
             </div>
           )}
 
-          <ResponsiveContainer width="100%" height={140}>
+          <ResponsiveContainer width="100%" height={130}>
             <LineChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -10 }}>
               <XAxis
                 dataKey="date"
@@ -113,7 +179,22 @@ export default function TimeSeriesPanel({ title, data, loading, lastUpdated, ref
             </LineChart>
           </ResponsiveContainer>
 
-          <div className="text-[8px] text-txt-secondary text-right mt-1">YTD</div>
+          {/* Range selector */}
+          <div className="flex gap-1 mt-1.5">
+            {RANGES.map((r, i) => (
+              <button
+                key={r.label}
+                onClick={() => setRangeIdx(i)}
+                className={`flex-1 text-[8px] font-semibold py-0.5 rounded-sm cursor-pointer transition-all ${
+                  i === rangeIdx
+                    ? 'bg-gold/20 text-gold'
+                    : 'text-txt-secondary hover:text-white'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
         </>
       )}
     </PanelCard>

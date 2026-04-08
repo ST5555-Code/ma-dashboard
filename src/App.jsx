@@ -1,6 +1,6 @@
 import { useMemo, Component } from 'react';
 import StickyHeader from './components/StickyHeader';
-import MarketConditionsRow from './components/MarketConditionsRow';
+import TopRow from './components/TopRow';
 import MainGrid from './components/MainGrid';
 import useQuotes from './hooks/useQuotes';
 import useFRED from './hooks/useFRED';
@@ -37,7 +37,7 @@ function App() {
   const symbols = useMemo(() => ALL_SYMBOLS, []);
   const fredSeries = useMemo(() => FRED_SERIES, []);
 
-  const { quotes, loading: quotesLoading, lastUpdated: quotesLastUpdated, refresh: refreshQuotes } = useQuotes(symbols, 60000);
+  const { quotes, loading: quotesLoading, refresh: refreshQuotes } = useQuotes(symbols, 60000);
   const { data: fredData, loading: fredLoading, lastUpdated: fredLastUpdated, refresh: refreshFRED } = useFRED(fredSeries, 3600000);
 
   async function handleRefreshAll() {
@@ -48,14 +48,7 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-navy text-txt-primary font-sans">
         <StickyHeader quotes={quotes} loading={quotesLoading} onRefresh={handleRefreshAll} />
-        <MarketConditionsRow
-          quotes={quotes}
-          quotesLoading={quotesLoading}
-          quotesLastUpdated={quotesLastUpdated}
-          fredData={fredData}
-          fredLoading={fredLoading}
-          fredLastUpdated={fredLastUpdated}
-        />
+        <TopRow fredData={fredData} fredLoading={fredLoading} fredLastUpdated={fredLastUpdated} />
         <MainGrid
           quotes={quotes}
           quotesLoading={quotesLoading}
