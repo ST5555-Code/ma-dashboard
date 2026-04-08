@@ -1,19 +1,25 @@
+import { useMemo } from 'react';
 import StickyHeader from './components/StickyHeader';
+import useQuotes from './hooks/useQuotes';
+
+// Deduplicated union of MarketsBar + TickerTape symbols
+const ALL_SYMBOLS = [
+  '^VIX', '^TNX', '^IRX', 'HYG', 'LQD', '^GSPC',
+  '^IXIC', '^RUT', 'MNA', 'MRGR',
+];
 
 function App() {
-  function handleRefreshAll() {
-    // Will wire to panel refresh functions in later steps
-  }
+  const symbols = useMemo(() => ALL_SYMBOLS, []);
+  const { quotes, loading, refresh } = useQuotes(symbols, 60000);
 
   return (
     <div className="min-h-screen bg-navy text-txt-primary font-sans">
-      <StickyHeader onRefresh={handleRefreshAll} />
+      <StickyHeader quotes={quotes} loading={loading} onRefresh={refresh} />
 
-      {/* Main content area — panels go here in Steps 4+ */}
       <main className="p-4">
         <div className="rounded-lg bg-navy-panel border border-gold/20 p-8 text-center">
           <p className="text-txt-secondary text-sm">
-            Step 2 complete — StickyHeader with NavBar, title bar, and live clock.
+            Step 3 complete — MarketsBar and TickerTape wired to live Yahoo Finance data.
           </p>
         </div>
       </main>

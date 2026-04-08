@@ -1,12 +1,15 @@
 import NavBar from './NavBar';
 import TitleBar from './TitleBar';
+import MarketsBar from './MarketsBar';
+import TickerTape from './TickerTape';
 
-export default function StickyHeader({ onRefresh }) {
+export default function StickyHeader({ quotes, loading, onRefresh }) {
   return (
     <header className="sticky top-0 z-[1000]">
       <NavBar />
       <TitleBar onRefresh={onRefresh} />
-      {/* MarketsBar and TickerTape will be added in Step 3 */}
+      <MarketsBar quotes={quotes} loading={loading} />
+      <TickerTape quotes={quotes} loading={loading} />
     </header>
   );
 }
