@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-export default function useEDGAR(forms, query = '', days = 30, limit = 20, intervalMs = 600000) {
+export default function useEDGAR(forms, query = '', days = 30, limit = 20, intervalMs = 600000, enrich = false) {
   const [filings, setFilings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -10,6 +10,7 @@ export default function useEDGAR(forms, query = '', days = 30, limit = 20, inter
     try {
       const params = new URLSearchParams({ forms, days: String(days), limit: String(limit) });
       if (query) params.set('q', query);
+      if (enrich) params.set('enrich', 'true');
       const res = await fetch(`/api/edgar-8k?${params}`);
       if (!res.ok) return;
       const json = await res.json();
@@ -21,7 +22,7 @@ export default function useEDGAR(forms, query = '', days = 30, limit = 20, inter
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [forms, query, days, limit]);
+  }, [forms, query, days, limit, enrich]);
 
   useEffect(() => {
     mountedRef.current = true;

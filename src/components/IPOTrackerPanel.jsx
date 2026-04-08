@@ -26,16 +26,15 @@ function timeAgo(dateStr) {
   return `${days}d ago`;
 }
 
-function fmtMktCap(v) {
+function fmtSize(v) {
   if (v == null) return '';
-  if (v >= 1e12) return `$${(v / 1e12).toFixed(1)}T`;
   if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
   if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
   return `$${(v / 1e3).toFixed(0)}K`;
 }
 
 function fmtPrice(v) {
-  if (v == null) return '--';
+  if (v == null) return '';
   return `$${v.toFixed(2)}`;
 }
 
@@ -45,7 +44,7 @@ function fmtChg(v) {
   return `${sign}${v.toFixed(1)}%`;
 }
 
-// Fetch YF quotes for a list of tickers to get mktcap + price + change
+// Fetch YF quotes for tickers
 function useIPOQuotes(tickers) {
   const [data, setData] = useState({});
   const mountedRef = useRef(true);
@@ -55,7 +54,7 @@ function useIPOQuotes(tickers) {
     mountedRef.current = true;
     if (!tickers.length) return;
 
-    async function fetch_quotes() {
+    async function fetchQuotes() {
       try {
         const res = await fetch(`/api/quotes?syms=${tickers.join(',')}`);
         if (!res.ok) return;
@@ -71,18 +70,14 @@ function useIPOQuotes(tickers) {
             const price = meta.regularMarketPrice;
             const prevClose = meta.chartPreviousClose ?? meta.previousClose;
             const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
-            parsed[sym] = {
-              price,
-              changePct,
-              volume: meta.regularMarketVolume || null,
-            };
+            parsed[sym] = { price, changePct, volume: meta.regularMarketVolume || null };
           } catch { /* skip */ }
         }
         setData(parsed);
       } catch { /* silent */ }
     }
 
-    fetch_quotes();
+    fetchQuotes();
     return () => { mountedRef.current = false; };
   }, [tickerKey]);
 
@@ -91,6 +86,7 @@ function useIPOQuotes(tickers) {
 
 function FilingRow({ filing, tag, quoteData }) {
   const q = quoteData?.[filing.ticker] || null;
+  const hasOffer = filing.offerSize != null;
 
   return (
     <a
@@ -115,17 +111,24 @@ function FilingRow({ filing, tag, quoteData }) {
         </div>
         <span className="text-[9px] text-txt-secondary flex-shrink-0 ml-2">{timeAgo(filing.filedDate)}</span>
       </div>
-      {/* Market data row */}
-      {q && (
+      {/* Market data + offer size */}
+      {(q || hasOffer) && (
         <div className="flex items-center gap-3 mt-0.5 text-[9px]">
-          <span className="text-txt-secondary">{fmtPrice(q.price)}</span>
-          {q.changePct != null && (
-            <span className={q.changePct >= 0 ? 'text-pos' : 'text-neg'}>
-              {fmtChg(q.changePct)}
-            </span>
+          {hasOffer && (
+            <span className="text-gold font-semibold">{fmtSize(filing.offerSize)}</span>
           )}
-          {q.volume && (
-            <span className="text-txt-secondary">Vol {(q.volume / 1e6).toFixed(1)}M</span>
+          {hasOffer && filing.offerPrice && (
+            <span className="text-txt-secondary">@ {fmtPrice(filing.offerPrice)}</span>
+          )}
+          {q && (
+            <>
+              <span className="text-txt-secondary">Now {fmtPrice(q.price)}</span>
+              {q.changePct != null && (
+                <span className={q.changePct >= 0 ? 'text-pos' : 'text-neg'}>
+                  {fmtChg(q.changePct)}
+                </span>
+              )}
+            </>
           )}
         </div>
       )}
@@ -148,42 +151,37 @@ function EmptyState({ loading, message }) {
   return <p className="text-txt-secondary text-[10px] py-1">{message}</p>;
 }
 
+const MAX_PER_SECTION = 5;
+
 export default function IPOTrackerPanel() {
-  // Last 7 days
+  // Last 5 business days, enrich 424B4 with offer size parsing
   const { filings: pricedFilings, loading: pricedLoading, lastUpdated: pricedUpdated } =
-    useEDGAR('424B4', '', 7, 20, 600000);
+    useEDGAR('424B4', '', 7, 10, 600000, true);
 
   const { filings: filedFilings, loading: filedLoading, lastUpdated: filedUpdated } =
-    useEDGAR('S-1', '', 7, 20, 600000);
+    useEDGAR('S-1', '', 7, 10, 600000);
 
   const loading = pricedLoading || filedLoading;
   const lastUpdated = pricedUpdated || filedUpdated;
 
-  // Collect all tickers from priced filings for YF enrichment
+  // Collect tickers for YF enrichment
   const pricedTickers = useMemo(() => {
-    return pricedFilings
-      .filter(f => f.ticker)
-      .map(f => f.ticker)
-      .slice(0, 20);
+    return pricedFilings.filter(f => f.ticker).map(f => f.ticker).slice(0, 15);
   }, [pricedFilings]);
 
   const quoteData = useIPOQuotes(pricedTickers);
 
-  // Separate SPACs, filter priced IPOs to mktcap > $200M
+  // Separate SPACs, filter micro-caps
   const { pricedIPOs, pricedSPACs } = useMemo(() => {
     const ipos = [];
     const spacs = [];
     for (const f of pricedFilings) {
-      if (isSPAC(f.company)) {
-        spacs.push(f);
-        continue;
-      }
-      // Filter out micro-caps: price < $10 as proxy (no free mktcap API)
+      if (isSPAC(f.company)) { spacs.push(f); continue; }
       const q = f.ticker ? quoteData[f.ticker] : null;
       if (q?.price && q.price < 10) continue;
       ipos.push(f);
     }
-    return { pricedIPOs: ipos, pricedSPACs: spacs };
+    return { pricedIPOs: ipos.slice(0, MAX_PER_SECTION), pricedSPACs: spacs };
   }, [pricedFilings, quoteData]);
 
   const { filedIPOs, filedSPACs } = useMemo(() => {
@@ -192,47 +190,42 @@ export default function IPOTrackerPanel() {
     for (const f of filedFilings) {
       (isSPAC(f.company) ? spacs : ipos).push(f);
     }
-    return { filedIPOs: ipos, filedSPACs: spacs };
+    return { filedIPOs: ipos.slice(0, MAX_PER_SECTION), filedSPACs: spacs };
   }, [filedFilings]);
 
-  const totalSPACs = pricedSPACs.length + filedSPACs.length;
+  const allSPACs = [...pricedSPACs, ...filedSPACs].slice(0, MAX_PER_SECTION);
 
   return (
     <PanelCard title="IPO Tracker (7d)" loading={loading} lastUpdated={lastUpdated} className="min-h-[280px]">
       <div className="max-h-[500px] overflow-y-auto">
-        {/* Priced IPOs — >$200M market cap */}
         <SectionLabel label="Priced IPOs" count={pricedIPOs.length} />
         {pricedIPOs.length === 0 && <EmptyState loading={pricedLoading} message="No priced IPOs this week" />}
         {pricedIPOs.map((f, i) => (
           <FilingRow key={`p-${i}`} filing={f} quoteData={quoteData} />
         ))}
 
-        {/* New S-1 Filings */}
         <SectionLabel label="New S-1 Filings" count={filedIPOs.length} />
         {filedIPOs.length === 0 && <EmptyState loading={filedLoading} message="No new S-1 filings this week" />}
         {filedIPOs.map((f, i) => (
           <FilingRow key={`s-${i}`} filing={f} quoteData={quoteData} />
         ))}
 
-        {/* SPACs */}
-        <SectionLabel label="SPACs" count={totalSPACs} />
-        {totalSPACs === 0 && <EmptyState loading={loading} message="No SPAC activity this week" />}
-        {pricedSPACs.map((f, i) => (
-          <FilingRow
-            key={`sp-${i}`}
-            filing={f}
-            quoteData={quoteData}
-            tag={{ label: 'PRICED', color: 'bg-pos/15 text-pos border border-pos/30' }}
-          />
-        ))}
-        {filedSPACs.map((f, i) => (
-          <FilingRow
-            key={`sf-${i}`}
-            filing={f}
-            quoteData={quoteData}
-            tag={{ label: 'FILED', color: 'bg-gold/15 text-gold border border-gold/30' }}
-          />
-        ))}
+        <SectionLabel label="SPACs" count={allSPACs.length} />
+        {allSPACs.length === 0 && <EmptyState loading={loading} message="No SPAC activity this week" />}
+        {allSPACs.map((f, i) => {
+          const isPriced = pricedSPACs.includes(f);
+          return (
+            <FilingRow
+              key={`sc-${i}`}
+              filing={f}
+              quoteData={quoteData}
+              tag={isPriced
+                ? { label: 'PRICED', color: 'bg-pos/15 text-pos border border-pos/30' }
+                : { label: 'FILED', color: 'bg-gold/15 text-gold border border-gold/30' }
+              }
+            />
+          );
+        })}
       </div>
     </PanelCard>
   );

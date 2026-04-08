@@ -1,8 +1,7 @@
 // /api/edgar-8k.js — EDGAR filing search proxy
 // Fetches recent 8-K (Item 1.01), S-4, 424B4, S-1, Schedule TO filings
-// Accepts: /api/edgar-8k?forms=8-K,S-4&days=30&limit=20
+// Accepts: /api/edgar-8k?forms=8-K,S-4&days=30&limit=20&enrich=true
 
-const EFTS_BASE = 'https://efts.sec.gov/LATEST/search-index';
 const EDGAR_SEARCH = 'https://efts.sec.gov/LATEST/search-index';
 const USER_AGENT = 'ma-dashboard serge.tismen@gmail.com';
 
@@ -10,6 +9,56 @@ function dateStr(daysAgo) {
   const d = new Date();
   d.setDate(d.getDate() - daysAgo);
   return d.toISOString().slice(0, 10);
+}
+
+// Parse 424B4 cover page for offering size
+async function parseOfferSize(cik, accession, filename) {
+  try {
+    const acc = accession.replace(/-/g, '');
+    const url = `https://www.sec.gov/Archives/edgar/data/${cik.replace(/^0+/, '')}/${acc}/${filename}`;
+    const r = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return null;
+
+    // Read first 15KB — cover page has the offering terms
+    const reader = r.body.getReader();
+    let text = '';
+    while (text.length < 15000) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += new TextDecoder().decode(value);
+    }
+    reader.cancel();
+
+    // Strip HTML tags
+    text = text.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&#\d+;/g, ' ').replace(/\s+/g, ' ');
+
+    // Look for "public offering price" near "$X.XX per share"
+    const priceMatch = text.match(/public\s+offering\s+price[\s\S]{0,200}?\$([0-9,.]+)\s+per\s+share/i)
+      || text.match(/\$([0-9,.]+)\s+per\s+share[\s\S]{0,100}?public\s+offering\s+price/i)
+      || text.match(/offering\s+price\s+of\s+\$([0-9,.]+)/i);
+
+    // Look for total shares offered
+    const sharesMatch = text.match(/([0-9,]+(?:,\d{3})+)\s+shares/i)
+      || text.match(/([0-9,]+)\s+shares\s+of\s+(?:class\s+a\s+)?common/i);
+
+    if (!priceMatch || !sharesMatch) return null;
+
+    const price = parseFloat(priceMatch[1].replace(/,/g, ''));
+    const shares = parseInt(sharesMatch[1].replace(/,/g, ''), 10);
+
+    if (isNaN(price) || isNaN(shares) || price < 1 || shares < 1000) return null;
+
+    return {
+      offerPrice: price,
+      sharesOffered: shares,
+      offerSize: price * shares,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function searchFilings(forms, query, days, limit) {
@@ -33,26 +82,32 @@ async function searchFilings(forms, query, days, limit) {
 
   return (data.hits?.hits || []).map(h => {
     const s = h._source;
-    // Clean company name: strip CIK, ticker suffixes from EDGAR display_names
     let rawName = s.display_names?.[0] || s.entity_name || 'Unknown';
     rawName = rawName.replace(/\s*\(CIK\s*\d+\)\s*/gi, '').replace(/\s*\([A-Z0-9, -]+\)\s*$/g, '').trim();
-    // Extract ticker from tickers array or from parenthetical in display name
     let ticker = s.tickers?.[0] || null;
     if (!ticker) {
       const m = (s.display_names?.[0] || '').match(/\(([A-Z]{1,5})\)/);
       if (m) ticker = m[1];
     }
+
+    const filingId = h._id || '';
+    const parts = filingId.split(':');
+    const accession = parts[0] || '';
+    const filename = parts[1] || '';
+    const cik = s.ciks?.[0] || s.entity_id || '';
+
     return {
       company: rawName,
       ticker,
-      cik: s.entity_id || null,
+      cik,
       form: s.form_type,
       filedDate: s.file_date,
       description: s.file_description || '',
       url: s.file_num
         ? `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&filenum=${s.file_num}&type=&dateb=&owner=include&count=10`
-        : `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${s.entity_id}&type=${encodeURIComponent(forms)}&dateb=&owner=include&count=10`,
-      accession: h._id || null,
+        : `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cik}&type=${encodeURIComponent(forms)}&dateb=&owner=include&count=10`,
+      accession,
+      filename,
     };
   });
 }
@@ -65,9 +120,26 @@ export default async function handler(req, res) {
   const query = (req.query?.q || '').trim();
   const days = Math.min(parseInt(req.query?.days || '30', 10), 90);
   const limit = Math.min(parseInt(req.query?.limit || '20', 10), 50);
+  const enrich = req.query?.enrich === 'true';
 
   try {
     const filings = await searchFilings(forms, query, days, limit);
+
+    // Enrich 424B4 filings with offer size parsing
+    if (enrich && forms.includes('424B4')) {
+      const enriched = await Promise.all(
+        filings.map(async (f) => {
+          if (f.accession && f.filename && f.cik) {
+            const offer = await parseOfferSize(f.cik, f.accession, f.filename);
+            if (offer) return { ...f, ...offer };
+          }
+          return f;
+        })
+      );
+      res.setHeader('Cache-Control', 'public, max-age=600');
+      return res.status(200).json({ filings: enriched, count: enriched.length, forms, query });
+    }
+
     res.setHeader('Cache-Control', 'public, max-age=600');
     return res.status(200).json({ filings, count: filings.length, forms, query });
   } catch (e) {
