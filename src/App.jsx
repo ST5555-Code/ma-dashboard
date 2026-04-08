@@ -55,7 +55,14 @@ function App() {
           fredLoading={fredLoading}
           fredLastUpdated={fredLastUpdated}
         />
-        <BelowFold quotes={quotes} quotesLoading={quotesLoading} quotesLastUpdated={quotesLastUpdated} />
+        <BelowFold
+          quotes={quotes}
+          quotesLoading={quotesLoading}
+          quotesLastUpdated={quotesLastUpdated}
+          fredData={fredData}
+          fredLoading={fredLoading}
+          fredLastUpdated={fredLastUpdated}
+        />
       </div>
     </ErrorBoundary>
   );

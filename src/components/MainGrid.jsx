@@ -7,9 +7,38 @@ import SponsorMonitorPanel from './SponsorMonitorPanel';
 
 export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading, fredLastUpdated }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
-      {/* Left Column */}
-      <div className="flex flex-col gap-4 order-3 md:order-1 xl:order-1">
+    <>
+      {/* Mobile: stacked with priority ordering. Tablet/Desktop: 2-col / 3-col grid */}
+      <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
+        {/* Left Column */}
+        <div className="flex flex-col gap-4">
+          <FinancingConditionsPanel
+            fredData={fredData}
+            fredLoading={fredLoading}
+            fredLastUpdated={fredLastUpdated}
+            quotes={quotes}
+            quotesLoading={quotesLoading}
+          />
+          <IPOTrackerPanel />
+        </div>
+
+        {/* Middle Column */}
+        <div className="flex flex-col gap-4">
+          <DealFlowPanel />
+          <MANewsFeedPanel />
+        </div>
+
+        {/* Right Column */}
+        <div className="flex flex-col gap-4">
+          <LiveTVPanel />
+          <SponsorMonitorPanel />
+        </div>
+      </div>
+
+      {/* Mobile layout — priority stacked per brief */}
+      <div className="flex flex-col gap-3 p-3 md:hidden">
+        <MANewsFeedPanel />
+        <DealFlowPanel />
         <FinancingConditionsPanel
           fredData={fredData}
           fredLoading={fredLoading}
@@ -18,19 +47,9 @@ export default function MainGrid({ quotes, quotesLoading, fredData, fredLoading,
           quotesLoading={quotesLoading}
         />
         <IPOTrackerPanel />
-      </div>
-
-      {/* Middle Column */}
-      <div className="flex flex-col gap-4 order-1 md:order-2 xl:order-2">
-        <DealFlowPanel />
-        <MANewsFeedPanel />
-      </div>
-
-      {/* Right Column */}
-      <div className="flex flex-col gap-4 order-2 md:order-3 xl:order-3">
-        <LiveTVPanel />
         <SponsorMonitorPanel />
+        <LiveTVPanel />
       </div>
-    </div>
+    </>
   );
 }

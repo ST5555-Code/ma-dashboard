@@ -8,7 +8,7 @@ const portals = [
 
 export default function NavBar() {
   return (
-    <div className="bg-[#0a0a0a] border-b border-[#2a2a2a] px-4 py-1.5 flex items-center gap-2 text-[11px]">
+    <div className="bg-[#0a0a0a] border-b border-[#2a2a2a] px-4 py-1.5 flex items-center gap-2 text-[11px] overflow-x-auto">
       <a
         href="https://media-dashboards.vercel.app/"
         className="text-gold font-bold tracking-widest px-2.5 py-1 border border-gold rounded-sm hover:bg-gold hover:text-navy transition-colors"
@@ -22,7 +22,7 @@ export default function NavBar() {
           href={p.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#aaa] px-2.5 py-1 border border-[#333] rounded-sm hover:text-white transition-colors"
+          className="text-[#aaa] px-2.5 py-1 border border-[#333] rounded-sm hover:text-white transition-colors flex-shrink-0 whitespace-nowrap"
         >
           {p.label} ↗
         </a>
